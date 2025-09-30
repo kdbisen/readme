@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity>
+    <entityId>ENT-001</entityId>
+    <entityName>Acme Corporation</entityName>
+    <entityType>CORPORATION</entityType>
+    <registrationNumber>REG-123456</registrationNumber>
+    <taxId>TAX-789012</taxId>
+    <incorporationDate>2020-01-15</incorporationDate>
+    <countryOfIncorporation>United States</countryOfIncorporation>
+    <businessAddress>123 Business Street, New York, NY 10001</businessAddress>
+    <legalAddress>456 Legal Avenue, New York, NY 10002</legalAddress>
+    
+    <primaryContact>
+        <contactId>CONT-001</contactId>
+        <firstName>John</firstName>
+        <lastName>Doe</lastName>
+        <email>john.doe@acme.com</email>
+        <phoneNumber>+1-555-123-4567</phoneNumber>
+        <mobileNumber>+1-555-987-6543</mobileNumber>
+        <address>789 Contact Lane, New York, NY 10003</address>
+        <city>New York</city>
+        <state>NY</state>
+        <postalCode>10003</postalCode>
+        <country>United States</country>
+        <contactType>PRIMARY_CONTACT</contactType>
+        <isPrimary>true</isPrimary>
+    </primaryContact>
+    
+    <additionalContacts>
+        <contact>
+            <contactId>CONT-002</contactId>
+            <firstName>Jane</firstName>
+            <lastName>Smith</lastName>
+            <email>jane.smith@acme.com</email>
+            <phoneNumber>+1-555-234-5678</phoneNumber>
+            <contactType>LEGAL_REPRESENTATIVE</contactType>
+            <isPrimary>false</isPrimary>
+        </contact>
+    </additionalContacts>
+    
+    <documents>
+        <document>
+            <documentId>DOC-001</documentId>
+            <documentName>Certificate of Incorporation</documentName>
+            <documentType>CERTIFICATE_OF_INCORPORATION</documentType>
+            <documentPath>/documents/cert_incorp.pdf</documentPath>
+            <mimeType>application/pdf</mimeType>
+            <fileSize>1024000</fileSize>
+            <issueDate>2020-01-15</issueDate>
+            <expiryDate>2030-01-15</expiryDate>
+            <issuingAuthority>New York State</issuingAuthority>
+            <documentNumber>CERT-123456</documentNumber>
+            <status>VERIFIED</status>
+        </document>
+        <document>
+            <documentId>DOC-002</documentId>
+            <documentName>Articles of Association</documentName>
+            <documentType>ARTICLES_OF_ASSOCIATION</documentType>
+            <documentPath>/documents/articles.pdf</documentPath>
+            <mimeType>application/pdf</mimeType>
+            <fileSize>512000</fileSize>
+            <issueDate>2020-01-15</issueDate>
+            <expiryDate>2030-01-15</expiryDate>
+            <issuingAuthority>New York State</issuingAuthority>
+            <documentNumber>ART-789012</documentNumber>
+            <status>VERIFIED</status>
+        </document>
+    </documents>
+    
+    <riskProfile>
+        <riskId>RISK-001</riskId>
+        <riskLevel>MEDIUM</riskLevel>
+        <riskFactors>
+            <riskFactor>HIGH_VOLUME_TRANSACTIONS</riskFactor>
+            <riskFactor>CASH_INTENSIVE_BUSINESS</riskFactor>
+        </riskFactors>
+        <riskAssessmentNotes>Medium risk entity with high transaction volume</riskAssessmentNotes>
+        <riskMitigationStrategy>Enhanced monitoring and regular reviews</riskMitigationStrategy>
+        <lastAssessmentDate>2024-01-01T10:00:00</lastAssessmentDate>
+        <assessedBy>RISK_OFFICER_001</assessedBy>
+    </riskProfile>
+    
+    <complianceInfo>
+        <complianceId>COMP-001</complianceId>
+        <regulatoryRequirements>
+            <requirement>AML_KYC</requirement>
+            <requirement>FATCA</requirement>
+            <requirement>CRS</requirement>
+        </regulatoryRequirements>
+        <sanctionsChecks>
+            <check>OFAC</check>
+            <check>EU_SANCTIONS</check>
+            <check>UN_SANCTIONS</check>
+        </sanctionsChecks>
+        <adverseMediaChecks>
+            <check>NEWS_MEDIA</check>
+            <check>REGULATORY_NOTICES</check>
+        </adverseMediaChecks>
+        <overallStatus>COMPLIANT</overallStatus>
+        <complianceNotes>Entity meets all regulatory requirements</complianceNotes>
+        <lastComplianceCheck>2024-01-01T09:00:00</lastComplianceCheck>
+        <checkedBy>COMPLIANCE_OFFICER_001</checkedBy>
+    </complianceInfo>
+</entity>

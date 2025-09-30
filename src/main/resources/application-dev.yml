@@ -1,0 +1,49 @@
+# Development Configuration
+spring.profiles.active=dev
+
+# Server Configuration
+server.port=8080
+server.servlet.context-path=/api/v1
+server.servlet.session.timeout=30m
+
+# MongoDB Configuration
+spring.data.mongodb.host=localhost
+spring.data.mongodb.port=27017
+spring.data.mongodb.database=banking_onboarding_dev
+spring.data.mongodb.authentication-database=admin
+spring.data.mongodb.auto-index-creation=true
+
+# Logging Configuration
+logging.level.com.banking.onboarding=DEBUG
+logging.level.org.springframework.integration=DEBUG
+logging.level.org.springframework.web=INFO
+logging.level.org.springframework.data.mongodb=INFO
+logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+logging.pattern.file=%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+
+# Fenergo Integration Configuration
+fenergo.api.base-url=http://localhost:8081/fenergo/api
+fenergo.api.timeout=30000
+fenergo.api.retry-attempts=3
+fenergo.api.connection-timeout=10000
+fenergo.api.read-timeout=30000
+
+# Process Configuration
+process.async.timeout=300000
+process.max-concurrent=10
+process.queue-capacity=100
+
+# Management Endpoints
+management.endpoints.web.exposure.include=health,info,metrics,prometheus
+management.endpoint.health.show-details=always
+management.endpoint.info.enabled=true
+management.endpoint.metrics.enabled=true
+management.metrics.export.prometheus.enabled=true
+
+# Jackson Configuration
+spring.jackson.default-property-inclusion=NON_NULL
+spring.jackson.serialization.write-dates-as-timestamps=false
+spring.jackson.time-zone=UTC
+
+# Validation Configuration
+spring.validation.enabled=true

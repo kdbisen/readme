@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  banking-onboarding-service:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_DATABASE=banking_onboarding_dev
+      - FENERGO_API_URL=http://mock-fenergo:8081/api
+    depends_on:
+      - mongodb
+      - mock-fenergo
+    networks:
+      - banking-network
+
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - banking-network
+
+  mock-fenergo:
+    image: wiremock/wiremock:latest
+    ports:
+      - "8081:8080"
+    command: --global-response-templating --verbose
+    volumes:
+      - ./wiremock:/home/wiremock
+    networks:
+      - banking-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  banking-network:
+    driver: bridge

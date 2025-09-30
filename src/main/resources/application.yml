@@ -1,0 +1,27 @@
+# Application Configuration
+server.port=8080
+server.servlet.context-path=/api/v1
+
+# MongoDB Configuration
+spring.data.mongodb.host=localhost
+spring.data.mongodb.port=27017
+spring.data.mongodb.database=banking_onboarding
+spring.data.mongodb.authentication-database=admin
+
+# Logging Configuration
+logging.level.com.banking.onboarding=INFO
+logging.level.org.springframework.integration=DEBUG
+logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} - %msg%n
+
+# Fenergo Integration Configuration
+fenergo.api.base-url=http://localhost:8081/fenergo/api
+fenergo.api.timeout=30000
+fenergo.api.retry-attempts=3
+
+# Process Configuration
+process.async.timeout=300000
+process.max-concurrent=10
+
+# Management Endpoints
+management.endpoints.web.exposure.include=health,info,metrics
+management.endpoint.health.show-details=always
