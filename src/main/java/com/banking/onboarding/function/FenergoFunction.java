@@ -1,9 +1,9 @@
 package com.banking.onboarding.function;
 
+import com.banking.onboarding.bridge.ApiBridgeService;
+import com.banking.onboarding.bridge.ApiResponse;
 import com.banking.onboarding.context.ProcessingContext;
 import com.banking.onboarding.model.EntityData;
-import com.banking.onboarding.model.OnboardingProcess.ProcessStatus;
-import com.banking.onboarding.service.FenergoIntegrationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -12,14 +12,14 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * Submit EntityData to Fenergo API
+ * Submit EntityData to Fenergo API using the bridge system
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class FenergoFunction implements ProcessingFunction<EntityData> {
     
-    private final FenergoIntegrationService fenergoService;
+    private final ApiBridgeService bridgeService;
     
     @Override
     public ProcessingContext<EntityData> apply(ProcessingContext<EntityData> context) {
@@ -33,21 +33,23 @@ public class FenergoFunction implements ProcessingFunction<EntityData> {
                 throw new IllegalArgumentException("EntityData is null - validation may have failed");
             }
             
-            // Submit to Fenergo
-            Map<String, Object> fenergoResponse = fenergoService.submitEntityToFenergo(entityData, context.getProcessId());
+            // Submit to Fenergo using bridge service
+            ApiResponse fenergoResponse = bridgeService.callApi("SUBMIT_KYC", entityData);
             
             // Add Fenergo response to context
-            context.addResult("fenergoResponse", fenergoResponse);
-            context.addResult("fenergoStatus", "SUCCESS");
+            context.addResult("fenergoResponse", fenergoResponse.getData());
+            context.addResult("fenergoStatus", fenergoResponse.isSuccess() ? "SUCCESS" : "FAILED");
             context.addResult("fenergoTimestamp", LocalDateTime.now());
+            context.addResult("fenergoStatusCode", fenergoResponse.getStatusCode());
+            context.addResult("fenergoResponseTime", fenergoResponse.getResponseTimeMs());
             
             // Check if Fenergo response indicates success
-            if (fenergoResponse != null && Boolean.TRUE.equals(fenergoResponse.get("error"))) {
-                throw new FenergoException("Fenergo submission failed: " + fenergoResponse.get("message"));
+            if (!fenergoResponse.isSuccess()) {
+                throw new FenergoException("Fenergo submission failed: " + fenergoResponse.getErrorMessage());
             }
             
-            log.info("[TRACE:{}] FenergoFunction completed successfully for process: {}", 
-                    context.getTraceId(), context.getProcessId());
+            log.info("[TRACE:{}] FenergoFunction completed successfully for process: {} in {}ms", 
+                    context.getTraceId(), context.getProcessId(), fenergoResponse.getResponseTimeMs());
             
         } catch (Exception e) {
             log.error("[TRACE:{}] FenergoFunction failed for process: {}", 
