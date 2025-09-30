@@ -1,17 +1,20 @@
 package com.banking.onboarding.proxy.advice;
 
+import com.banking.onboarding.logging.ErrorLoggingService;
 import com.banking.onboarding.proxy.ProxyException;
 import com.banking.onboarding.proxy.ProxyResponse;
+import com.banking.onboarding.service.CorrelationIdService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * AOP advice for proxy error handling and monitoring
@@ -19,7 +22,11 @@ import java.time.Instant;
 @Slf4j
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class ProxyErrorHandlingAdvice {
+    
+    private final ErrorLoggingService errorLoggingService;
+    private final CorrelationIdService correlationIdService;
     
     /**
      * Around advice for proxy service calls
@@ -30,13 +37,14 @@ public class ProxyErrorHandlingAdvice {
         Instant startTime = Instant.now();
         String methodName = joinPoint.getSignature().getName();
         Object[] args = joinPoint.getArgs();
+        String correlationId = correlationIdService.getCurrentCorrelationId();
         
         // Extract arguments for logging
         String proxyUrl = args.length > 0 ? (String) args[0] : "unknown";
         String fenergoEndpoint = args.length > 1 ? (String) args[1] : "unknown";
         
-        log.info("Starting proxy call - Method: {}, Proxy: {}, Fenergo: {}", 
-                methodName, proxyUrl, fenergoEndpoint);
+        log.info("[CORRELATION:{}] Starting proxy call - Method: {}, Proxy: {}, Fenergo: {}", 
+                correlationId, methodName, proxyUrl, fenergoEndpoint);
         
         try {
             // Execute the method
@@ -47,13 +55,13 @@ public class ProxyErrorHandlingAdvice {
             
             if (result instanceof ProxyResponse) {
                 ProxyResponse response = (ProxyResponse) result;
-                log.info("Proxy call completed - Status: {}, Time: {}ms, Endpoint: {}", 
-                        response.getStatusCode(), executionTime.toMillis(), fenergoEndpoint);
+                log.info("[CORRELATION:{}] Proxy call completed - Status: {}, Time: {}ms, Endpoint: {}", 
+                        correlationId, response.getStatusCode(), executionTime.toMillis(), fenergoEndpoint);
                 
                 // Log warning for slow responses
                 if (executionTime.toMillis() > 10000) {
-                    log.warn("Slow proxy response detected - Time: {}ms, Endpoint: {}", 
-                            executionTime.toMillis(), fenergoEndpoint);
+                    log.warn("[CORRELATION:{}] Slow proxy response detected - Time: {}ms, Endpoint: {}", 
+                            correlationId, executionTime.toMillis(), fenergoEndpoint);
                 }
             }
             
@@ -61,15 +69,33 @@ public class ProxyErrorHandlingAdvice {
             
         } catch (ProxyException e) {
             Duration executionTime = Duration.between(startTime, Instant.now());
-            log.error("Proxy exception - Time: {}ms, Proxy: {}, Fenergo: {}, Error: {}", 
-                    executionTime.toMillis(), proxyUrl, fenergoEndpoint, e.getMessage());
+            log.error("[CORRELATION:{}] Proxy exception - Time: {}ms, Proxy: {}, Fenergo: {}, Error: {}", 
+                    correlationId, executionTime.toMillis(), proxyUrl, fenergoEndpoint, e.getMessage());
+            
+            // Log error to MongoDB
+            Map<String, Object> context = new HashMap<>();
+            context.put("methodName", methodName);
+            context.put("durationMs", executionTime.toMillis());
+            context.put("proxyUrl", proxyUrl);
+            context.put("fenergoEndpoint", fenergoEndpoint);
+            context.put("errorSource", "PROXY_AOP");
+            errorLoggingService.logProxyError(proxyUrl, fenergoEndpoint, e.getMessage(), e);
             
             return ProxyResponse.error(500, "Proxy Error", fenergoEndpoint, e.getMessage());
             
         } catch (Exception e) {
             Duration executionTime = Duration.between(startTime, Instant.now());
-            log.error("Unexpected error in proxy call - Time: {}ms, Proxy: {}, Fenergo: {}", 
-                    executionTime.toMillis(), proxyUrl, fenergoEndpoint, e);
+            log.error("[CORRELATION:{}] Unexpected error in proxy call - Time: {}ms, Proxy: {}, Fenergo: {}", 
+                    correlationId, executionTime.toMillis(), proxyUrl, fenergoEndpoint, e);
+            
+            // Log error to MongoDB
+            Map<String, Object> context = new HashMap<>();
+            context.put("methodName", methodName);
+            context.put("durationMs", executionTime.toMillis());
+            context.put("proxyUrl", proxyUrl);
+            context.put("fenergoEndpoint", fenergoEndpoint);
+            context.put("errorSource", "PROXY_AOP");
+            errorLoggingService.logError("PROXY_UNEXPECTED_ERROR", e.getMessage(), e, context);
             
             return ProxyResponse.error(500, "Internal Server Error", fenergoEndpoint, 
                     "Unexpected error: " + e.getMessage());
@@ -84,16 +110,26 @@ public class ProxyErrorHandlingAdvice {
         
         Object[] args = joinPoint.getArgs();
         String proxyUrl = args.length > 0 ? (String) args[0] : "unknown";
+        String correlationId = correlationIdService.getCurrentCorrelationId();
         
-        log.debug("Checking proxy availability: {}", proxyUrl);
+        log.debug("[CORRELATION:{}] Checking proxy availability: {}", correlationId, proxyUrl);
         
         try {
             Object result = joinPoint.proceed();
-            log.debug("Proxy availability check result: {} for {}", result, proxyUrl);
+            log.debug("[CORRELATION:{}] Proxy availability check result: {} for {}", 
+                    correlationId, result, proxyUrl);
             return result;
             
         } catch (Exception e) {
-            log.warn("Proxy availability check failed: {} - Error: {}", proxyUrl, e.getMessage());
+            log.warn("[CORRELATION:{}] Proxy availability check failed: {} - Error: {}", 
+                    correlationId, proxyUrl, e.getMessage());
+            
+            // Log error to MongoDB
+            Map<String, Object> context = new HashMap<>();
+            context.put("proxyUrl", proxyUrl);
+            context.put("checkType", "AVAILABILITY");
+            errorLoggingService.logError("PROXY_AVAILABILITY_CHECK_ERROR", e.getMessage(), e, context);
+            
             return false;
         }
     }

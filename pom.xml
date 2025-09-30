@@ -41,6 +41,13 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
         
+        <!-- Logstash for structured logging -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>7.4</version>
+        </dependency>
+        
         <!-- Apache HttpClient 5 as alternative -->
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
