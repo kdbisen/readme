@@ -1,5 +1,7 @@
 package com.banking.onboarding.bridge;
 
+import com.banking.onboarding.bridge.config.EndpointConfig;
+import com.banking.onboarding.bridge.config.EndpointConfigurationLoader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,7 +11,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Registry for API endpoints - manages dynamic API configurations
+ * Registry for API endpoints - manages dynamic API configurations from properties
  */
 @Slf4j
 @Service
@@ -19,6 +21,7 @@ public class ApiEndpointRegistry {
     @Value("${fenergo.api.base-url:http://localhost:8081/fenergo/api}")
     private String baseUrl;
     
+    private final EndpointConfigurationLoader configLoader;
     private final Map<String, ApiEndpoint> endpoints = new ConcurrentHashMap<>();
     
     /**
@@ -59,108 +62,62 @@ public class ApiEndpointRegistry {
         if (endpoint == null) {
             throw new IllegalArgumentException("Endpoint not found: " + endpointName);
         }
-        return baseUrl + endpoint.getPath();
+        
+        String path = endpoint.getPath();
+        if (path.startsWith("http")) {
+            // Full URL provided
+            return path;
+        } else {
+            // Relative path, prepend base URL
+            return baseUrl + path;
+        }
     }
     
     /**
-     * Initialize default Fenergo endpoints
+     * Initialize endpoints from configuration
      */
     public void initializeDefaultEndpoints() {
-        // Entity Management - All require authentication
-        registerEndpoint(ApiEndpoint.builder()
-                .name("CREATE_ENTITY")
-                .method("POST")
-                .path("/entities")
-                .description("Create new entity")
-                .authRequired(true)
-                .authScope("fenergo-entity-write")
-                .build());
-                
-        registerEndpoint(ApiEndpoint.builder()
-                .name("GET_ENTITY")
-                .method("GET")
-                .path("/entities/{entityId}")
-                .description("Get entity by ID")
-                .authRequired(true)
-                .authScope("fenergo-entity-read")
-                .build());
-                
-        registerEndpoint(ApiEndpoint.builder()
-                .name("UPDATE_ENTITY")
-                .method("PUT")
-                .path("/entities/{entityId}")
-                .description("Update entity")
-                .authRequired(true)
-                .authScope("fenergo-entity-write")
-                .build());
-                
-        registerEndpoint(ApiEndpoint.builder()
-                .name("DELETE_ENTITY")
-                .method("DELETE")
-                .path("/entities/{entityId}")
-                .description("Delete entity")
-                .authRequired(true)
-                .authScope("fenergo-entity-write")
-                .build());
+        log.info("Initializing endpoints from configuration...");
         
-        // KYC Operations - Mixed auth requirements
-        registerEndpoint(ApiEndpoint.builder()
-                .name("SUBMIT_KYC")
-                .method("POST")
-                .path("/kyc/submit")
-                .description("Submit KYC documents")
-                .authRequired(true)
-                .authScope("fenergo-kyc-write")
-                .build());
-                
-        registerEndpoint(ApiEndpoint.builder()
-                .name("GET_KYC_STATUS")
-                .method("GET")
-                .path("/kyc/{entityId}/status")
-                .description("Get KYC status")
-                .authRequired(true)
-                .authScope("fenergo-kyc-read")
-                .build());
+        Map<String, EndpointConfig> configs = configLoader.getAllEndpointConfigs();
         
-        // Compliance Operations - All require auth
-        registerEndpoint(ApiEndpoint.builder()
-                .name("RUN_COMPLIANCE_CHECK")
-                .method("POST")
-                .path("/compliance/check")
-                .description("Run compliance check")
-                .authRequired(true)
-                .authScope("fenergo-compliance-write")
-                .build());
-                
-        registerEndpoint(ApiEndpoint.builder()
-                .name("GET_COMPLIANCE_RESULTS")
-                .method("GET")
-                .path("/compliance/{entityId}/results")
-                .description("Get compliance results")
-                .authRequired(true)
-                .authScope("fenergo-compliance-read")
-                .build());
+        if (configs.isEmpty()) {
+            log.warn("No endpoint configurations found, using fallback endpoints");
+            initializeFallbackEndpoints();
+            return;
+        }
         
-        // Risk Assessment - All require auth
-        registerEndpoint(ApiEndpoint.builder()
-                .name("ASSESS_RISK")
-                .method("POST")
-                .path("/risk/assess")
-                .description("Assess entity risk")
-                .authRequired(true)
-                .authScope("fenergo-risk-write")
-                .build());
-                
-        registerEndpoint(ApiEndpoint.builder()
-                .name("GET_RISK_PROFILE")
-                .method("GET")
-                .path("/risk/{entityId}/profile")
-                .description("Get risk profile")
-                .authRequired(true)
-                .authScope("fenergo-risk-read")
-                .build());
+        // Convert EndpointConfig to ApiEndpoint
+        configs.forEach((name, config) -> {
+            ApiEndpoint endpoint = ApiEndpoint.builder()
+                    .name(config.getName())
+                    .method(config.getMethod())
+                    .path(config.getPath())
+                    .description(config.getDescription())
+                    .authRequired(config.getAuthRequired())
+                    .authScope(config.getAuthScope())
+                    .authType(config.getAuthType())
+                    .timeoutMs(config.getTimeoutMs())
+                    .retryAttempts(config.getRetryAttempts())
+                    .defaultHeaders(config.getDefaultHeaders())
+                    .defaultQueryParams(config.getDefaultQueryParams())
+                    .build();
+            
+            registerEndpoint(endpoint);
+        });
         
-        // Public endpoints - No auth required
+        log.info("Initialized {} endpoints from configuration", endpoints.size());
+        
+        // Log configuration statistics
+        Map<String, Object> stats = configLoader.getConfigurationStats();
+        log.info("Configuration stats: {}", stats);
+    }
+    
+    /**
+     * Fallback endpoints if configuration is not available
+     */
+    private void initializeFallbackEndpoints() {
+        // Basic fallback endpoints
         registerEndpoint(ApiEndpoint.builder()
                 .name("HEALTH_CHECK")
                 .method("GET")
@@ -170,13 +127,32 @@ public class ApiEndpointRegistry {
                 .build());
                 
         registerEndpoint(ApiEndpoint.builder()
-                .name("API_INFO")
-                .method("GET")
-                .path("/api/info")
-                .description("API information")
-                .authRequired(false)
+                .name("SUBMIT_KYC")
+                .method("POST")
+                .path("/kyc/submit")
+                .description("Submit KYC documents")
+                .authRequired(true)
+                .authScope("fenergo-kyc-write")
                 .build());
-        
-        log.info("Initialized {} default Fenergo API endpoints", endpoints.size());
+    }
+    
+    /**
+     * Reload endpoints from configuration
+     */
+    public void reloadEndpoints() {
+        log.info("Reloading endpoints from configuration...");
+        endpoints.clear();
+        configLoader.reloadConfigurations();
+        initializeDefaultEndpoints();
+    }
+    
+    /**
+     * Get endpoint configuration statistics
+     */
+    public Map<String, Object> getEndpointStats() {
+        Map<String, Object> stats = configLoader.getConfigurationStats();
+        stats.put("registeredEndpoints", endpoints.size());
+        stats.put("baseUrl", baseUrl);
+        return stats;
     }
 }
