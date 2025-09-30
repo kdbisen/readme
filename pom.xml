@@ -36,6 +36,12 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
         
+        <!-- Spring Boot AOP for error handling -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        
         <!-- Apache HttpClient 5 as alternative -->
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>

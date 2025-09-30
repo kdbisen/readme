@@ -33,8 +33,8 @@ public class FenergoFunction implements ProcessingFunction<EntityData> {
                 throw new IllegalArgumentException("EntityData is null - validation may have failed");
             }
             
-            // Submit to Fenergo using bridge service
-            ApiResponse fenergoResponse = bridgeService.callApi("SUBMIT_KYC", entityData);
+            // Submit to Fenergo using proxy via bridge service
+            ApiResponse fenergoResponse = bridgeService.callApiViaProxy("SUBMIT_KYC", entityData);
             
             // Add Fenergo response to context
             context.addResult("fenergoResponse", fenergoResponse.getData());
