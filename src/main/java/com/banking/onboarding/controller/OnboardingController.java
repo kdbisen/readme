@@ -6,12 +6,11 @@ import com.banking.onboarding.model.OnboardingProcess;
 import com.banking.onboarding.model.RequestType;
 import com.banking.onboarding.service.CorrelationIdService;
 import com.banking.onboarding.service.OnboardingProcessService;
+import com.banking.onboarding.service.FunctionalOnboardingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.integration.support.MessageBuilder;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -24,7 +23,7 @@ import java.util.UUID;
 public class OnboardingController {
 
     private final OnboardingProcessService processService;
-    private final MessageChannel processEntityChannel;
+    private final FunctionalOnboardingService functionalService;
     private final CorrelationIdService correlationIdService;
     
     @PostMapping("/process-entity/{requestType}")
@@ -38,22 +37,22 @@ public class OnboardingController {
             // Get correlation ID from request context (automatically handled by interceptor)
             String correlationId = correlationIdService.getCurrentCorrelationId();
 
-            // Create onboarding process
-            OnboardingProcess process = processService.createProcess(payload, correlationId, requestType);
+            // Generate process ID
+            String processId = UUID.randomUUID().toString();
             
-            // Send to async processing channel
-            processEntityChannel.send(MessageBuilder.withPayload(process).build());
+            // Start async processing using functional service
+            functionalService.processEntityAsync(payload, requestType, processId);
             
             // Prepare response
             ProcessEntityResponse response = ProcessEntityResponse.builder()
-                    .processId(process.getProcessId())
-                    .correlationId(process.getCorrelationId())
-                    .status(process.getStatus().toString())
+                    .processId(processId)
+                    .correlationId(correlationId)
+                    .status("PROCESSING")
                     .message("Entity processing started successfully")
                     .estimatedCompletionTime("5-10 minutes")
                     .build();
             
-            log.info("Successfully initiated processing for process: {}", process.getProcessId());
+            log.info("Successfully initiated processing for process: {}", processId);
             return ResponseEntity.accepted().body(response);
             
         } catch (Exception e) {
