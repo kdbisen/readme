@@ -1,14 +1,13 @@
 package com.banking.onboarding;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.integration.annotation.IntegrationComponentScan;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootApplication
-@IntegrationComponentScan
-public class BankingOnboardingServiceApplication {
+@SpringBootTest
+class BankingOnboardingServiceApplicationTests {
 
-    public static void main(String[] args) {
-        SpringApplication.run(BankingOnboardingServiceApplication.class, args);
+    @Test
+    void contextLoads() {
+        // This test ensures the Spring context loads successfully
     }
 }
