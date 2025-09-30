@@ -240,35 +240,13 @@ public class EndpointConfigurationLoader {
     }
     
     /**
-     * Get configuration statistics
+     * Get simple configuration statistics
      */
     public Map<String, Object> getConfigurationStats() {
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalEndpoints", endpointConfigs.size());
-        stats.put("authRequiredEndpoints", 
-                endpointConfigs.values().stream()
-                        .mapToInt(config -> config.getAuthRequired() ? 1 : 0)
-                        .sum());
-        stats.put("publicEndpoints", 
-                endpointConfigs.values().stream()
-                        .mapToInt(config -> !config.getAuthRequired() ? 1 : 0)
-                        .sum());
-        stats.put("configFile", configFile);
         stats.put("configEnabled", configEnabled);
-        stats.put("configSource", "Properties File with Environment Variables");
-        
-        // Add environment variable usage stats
-        Map<String, Integer> envVarUsage = new HashMap<>();
-        endpointConfigs.values().forEach(config -> {
-            if (config.getAuthScope() != null && config.getAuthScope().contains("${")) {
-                envVarUsage.merge("authScope", 1, Integer::sum);
-            }
-            if (config.getTimeoutMs() != null && config.getTimeoutMs().toString().contains("${")) {
-                envVarUsage.merge("timeout", 1, Integer::sum);
-            }
-        });
-        stats.put("environmentVariableUsage", envVarUsage);
-        
+        stats.put("configSource", "Simple Properties File");
         return stats;
     }
 }
