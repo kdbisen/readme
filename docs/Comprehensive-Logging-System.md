@@ -1,282 +1,381 @@
-# 📊 **Comprehensive Logging System Documentation**
+# Comprehensive Logging System Documentation
 
-## 🎯 **Overview**
+## Overview
 
-This banking onboarding service implements a comprehensive logging system designed for production environments with Kibana integration, MongoDB error storage, and automatic request/response logging.
+The banking onboarding service includes a comprehensive logging system that provides:
 
-## 🏗️ **Architecture Components**
+1. **Request/Response Logging**: Automatic logging of all inbound requests and outbound responses
+2. **Error Event Storage**: Database storage of all errors and exceptions with correlation IDs
+3. **Business Event Logging**: Structured logging of business operations
+4. **Performance Metrics**: Logging of operation performance and metrics
+5. **External API Call Tracking**: Complete tracking of external service calls
+6. **Correlation ID Tracking**: End-to-end request tracing
 
-### **1. Logback Configuration (`logback-spring.xml`)**
-- **JSON-structured logs** for Kibana compatibility
-- **Multiple appenders**: Console, File, Error-specific, Request/Response
-- **MongoDB appender** for error persistence
-- **Environment-specific** configurations (dev/prod)
-- **Rolling file policies** with size and time-based rotation
+## Architecture
 
-### **2. Correlation ID Management**
-- **Automatic generation** if not provided in headers
-- **MDC integration** for thread-local correlation tracking
-- **Multi-ID support**: Correlation ID, Trace ID, Process ID
-- **Header propagation** in all HTTP responses
+### Components
 
-### **3. Error Logging Service**
-- **MongoDB persistence** of all errors with full context
-- **Categorized error types**: API, Processing, Proxy, Validation
-- **Rich context** including correlation IDs, stack traces, and metadata
-- **Automatic error categorization** and indexing
+1. **LoggingEventService**: Core service for logging various types of events
+2. **RequestResponseLoggingFilter**: Servlet filter for automatic request/response logging
+3. **ErrorEventService**: Service for storing error events in the database
+4. **GlobalExceptionHandler**: Exception handler that logs errors using the error event service
+5. **ErrorEvent Model**: MongoDB document model for error events
+6. **ErrorEventRepository**: Repository for error event operations
 
-### **4. Request/Response Logging**
-- **Automatic interception** of all HTTP requests/responses
-- **Content sanitization** (removes sensitive data)
-- **Performance metrics** (duration tracking)
-- **Structured logging** with correlation IDs
+### Data Flow
 
-## 📋 **Logging Features**
-
-### **🔍 Correlation Tracking**
-```json
-{
-  "correlationId": "CORR-A1B2C3D4",
-  "traceId": "TRACE-E5F6G7H8",
-  "processId": "PROC-I9J0K1L2",
-  "timestamp": "2025-09-30T08:15:30.123Z",
-  "service": "banking-onboarding-service"
-}
+```
+Request → RequestResponseLoggingFilter → LoggingEventService → Logs
+    ↓
+Exception → GlobalExceptionHandler → ErrorEventService → MongoDB
 ```
 
-### **📊 Kibana-Ready JSON Format**
-```json
-{
-  "timestamp": "2025-09-30T08:15:30.123Z",
-  "level": "INFO",
-  "logger": "com.banking.onboarding.controller.OnboardingController",
-  "message": "Request processed successfully",
-  "correlationId": "CORR-A1B2C3D4",
-  "traceId": "TRACE-E5F6G7H8",
-  "processId": "PROC-I9J0K1L2",
-  "service": "banking-onboarding-service",
-  "environment": "prod",
-  "version": "1.0.0",
-  "thread": "http-nio-8080-exec-1",
-  "class": "OnboardingController"
-}
-```
+## Features
 
-### **🗄️ MongoDB Error Storage**
-```json
-{
-  "timestamp": "2025-09-30T08:15:30.123Z",
-  "errorType": "API_ERROR",
-  "errorMessage": "Fenergo API call failed",
-  "correlationId": "CORR-A1B2C3D4",
-  "exceptionClass": "WebClientResponseException",
-  "exceptionMessage": "500 Internal Server Error",
-  "stackTrace": "com.banking.onboarding...",
-  "endpoint": "/onboarding/process-entity/ADD_KYC",
-  "method": "POST",
-  "statusCode": 500,
-  "service": "banking-onboarding-service",
-  "environment": "prod"
-}
-```
+### 1. Request/Response Logging
 
-## 🚀 **Usage Examples**
+**Automatic Logging**: All HTTP requests and responses are automatically logged with:
+- Method and URI
+- Headers (sanitized)
+- Request/Response body (sanitized)
+- Correlation ID and Trace ID
+- Duration
+- Timestamp
 
-### **1. Automatic Request Logging**
+**Filter Configuration**:
 ```java
-// Automatically logged by RequestResponseLoggingInterceptor
-POST /api/v1/onboarding/process-entity/ADD_KYC
-Headers: {X-Correlation-ID: CORR-A1B2C3D4, Content-Type: application/json}
-Body: {"entityData": "..."}
-Response: 202 Accepted (150ms)
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class RequestResponseLoggingFilter implements Filter
 ```
 
-### **2. Error Logging to MongoDB**
+### 2. Error Event Storage
+
+**Database Storage**: All errors and exceptions are stored in MongoDB with:
+- Error type and message
+- Correlation ID and Trace ID
+- Stack trace
+- Context data
+- Service and method information
+- Timestamp and environment
+
+**Error Types**:
+- `APPLICATION_ERROR`: General application errors
+- `VALIDATION_ERROR`: Input validation errors
+- `EXTERNAL_SERVICE_ERROR`: External API errors
+- `DATABASE_ERROR`: Database operation errors
+- `AUTHENTICATION_ERROR`: Authentication failures
+- `AUTHORIZATION_ERROR`: Authorization failures
+- `TIMEOUT_ERROR`: Operation timeout errors
+- `CONFIGURATION_ERROR`: Configuration issues
+- `BUSINESS_LOGIC_ERROR`: Business rule violations
+- `SYSTEM_ERROR`: System-level errors
+
+### 3. Business Event Logging
+
+**Structured Logging**: Business operations are logged with:
+- Event type and name
+- Event data
+- Correlation ID and Trace ID
+- Timestamp
+
+**Usage**:
 ```java
-@Service
-public class OnboardingService {
-    
-    @Autowired
-    private ErrorLoggingService errorLoggingService;
-    
-    public void processEntity(String payload) {
-        try {
-            // Processing logic
-        } catch (Exception e) {
-            // Automatically logs to MongoDB with full context
-            errorLoggingService.logProcessingError(
-                processId, "TRANSFORM", e.getMessage(), e);
-        }
-    }
-}
+loggingEventService.logBusinessEvent(
+    "BUSINESS_OPERATION",
+    "CUSTOMER_ONBOARDING_STARTED",
+    eventData,
+    correlationId,
+    traceId
+);
 ```
 
-### **3. Manual Error Logging**
+### 4. Performance Metrics
+
+**Performance Tracking**: Operation performance is logged with:
+- Operation name
+- Duration in milliseconds
+- Performance metrics
+- Correlation ID and Trace ID
+
+**Usage**:
 ```java
-// Log API errors
-errorLoggingService.logApiError(
-    "/fenergo/api/submit", "POST", 500, 
-    "Service unavailable", requestPayload, responsePayload);
-
-// Log validation errors
-errorLoggingService.logValidationError(
-    "KYC_ENTITY", "REQUIRED_FIELD", 
-    "Missing required field: customerId", entityData);
+loggingEventService.logPerformanceMetrics(
+    "DATABASE_QUERY",
+    durationMs,
+    metrics,
+    correlationId,
+    traceId
+);
 ```
 
-## 🔧 **Configuration**
+### 5. External API Call Tracking
 
-### **Environment Variables**
-```bash
-# Logging environment
-export ENVIRONMENT=prod
-export APP_VERSION=1.2.0
+**Complete API Tracking**: External service calls are logged with:
+- Method and URL
+- Headers and body
+- Response status and body
+- Duration
+- Correlation ID and Trace ID
 
-# MongoDB for error logging
-export MONGODB_URI=mongodb://localhost:27017/banking-onboarding
+**Usage**:
+```java
+// Log API call
+loggingEventService.logExternalApiCall(method, url, headers, body, correlationId, traceId);
 
-# Log levels
-export LOG_LEVEL_ROOT=INFO
-export LOG_LEVEL_BANKING=DEBUG
+// Log API response
+loggingEventService.logExternalApiResponse(method, url, statusCode, headers, body, correlationId, traceId, duration);
 ```
 
-### **Application Properties**
+## Configuration
+
+### Application Properties
+
 ```properties
-# Logging configuration
+# Logging Configuration
 logging.level.com.banking.onboarding=INFO
 logging.level.com.banking.onboarding.logging=DEBUG
-logging.config=classpath:logback-spring.xml
 
 # Environment variables
 ENVIRONMENT=${ENVIRONMENT:dev}
 APP_VERSION=${APP_VERSION:1.0.0}
-MONGODB_URI=${MONGODB_URI:mongodb://localhost:27017/banking-onboarding}
+
+# MongoDB Configuration
+spring.data.mongodb.host=localhost
+spring.data.mongodb.port=27017
+spring.data.mongodb.database=banking_onboarding
 ```
 
-## 📁 **Log Files Structure**
+### Logback Configuration
 
-```
-logs/
-├── banking-onboarding-service.log          # All application logs
-├── banking-onboarding-service.2025-09-30.0.log  # Daily rotated logs
-├── errors.log                              # Error-specific logs
-├── errors.2025-09-30.0.log                # Daily rotated error logs
-├── requests-responses.log                  # Request/response logs
-└── requests-responses.2025-09-30.0.log    # Daily rotated request logs
-```
+The system uses structured JSON logging with Logstash encoder for easy integration with ELK stack.
 
-## 🔍 **Kibana Queries**
+## Database Schema
 
-### **Find All Logs for a Correlation ID**
+### ErrorEvent Collection
+
 ```json
 {
-  "query": {
-    "term": {
-      "correlationId": "CORR-A1B2C3D4"
-    }
-  }
+  "_id": "ObjectId",
+  "errorType": "APPLICATION_ERROR",
+  "errorMessage": "Error description",
+  "correlationId": "CORR-12345678",
+  "traceId": "TRACE-ABCDEFGH",
+  "serviceName": "banking-onboarding-service",
+  "methodName": "processOnboarding",
+  "exceptionType": "RuntimeException",
+  "stackTrace": "Full stack trace...",
+  "contextData": {
+    "additional": "context information"
+  },
+  "timestamp": "2025-01-01T10:00:00",
+  "environment": "dev",
+  "version": "1.0.0",
+  "severity": "ERROR",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNotes": null,
+  "version": 1
 }
 ```
 
-### **Find All Errors in Last Hour**
-```json
-{
-  "query": {
-    "bool": {
-      "must": [
-        {"term": {"level": "ERROR"}},
-        {"range": {"timestamp": {"gte": "now-1h"}}}
-      ]
-    }
-  }
+## API Endpoints
+
+### Logging Demo Endpoints
+
+- `POST /api/v1/logging-demo/business-event`: Demonstrate business event logging
+- `POST /api/v1/logging-demo/performance-metrics`: Demonstrate performance metrics logging
+- `POST /api/v1/logging-demo/external-api-call`: Demonstrate external API call logging
+- `POST /api/v1/logging-demo/error-logging`: Demonstrate error logging
+- `POST /api/v1/logging-demo/timeout-error`: Demonstrate timeout error logging
+- `POST /api/v1/logging-demo/external-service-error`: Demonstrate external service error logging
+- `GET /api/v1/logging-demo/stats`: Get logging statistics
+
+## Usage Examples
+
+### 1. Logging Business Events
+
+```java
+@Autowired
+private LoggingEventService loggingEventService;
+
+public void processCustomerOnboarding(Customer customer) {
+    String correlationId = correlationIdService.getCurrentCorrelationId();
+    String traceId = generateTraceId();
+    
+    Map<String, Object> eventData = new HashMap<>();
+    eventData.put("customerId", customer.getId());
+    eventData.put("onboardingType", "NEW_CUSTOMER");
+    
+    loggingEventService.logBusinessEvent(
+        "CUSTOMER_ONBOARDING",
+        "ONBOARDING_STARTED",
+        eventData,
+        correlationId,
+        traceId
+    );
 }
 ```
 
-### **Find Slow Requests (>5 seconds)**
-```json
-{
-  "query": {
-    "bool": {
-      "must": [
-        {"term": {"logType": "RESPONSE"}},
-        {"range": {"durationMs": {"gte": 5000}}}
-      ]
-    }
-  }
+### 2. Logging Errors
+
+```java
+@Autowired
+private ErrorEventService errorEventService;
+
+public void handleExternalServiceError(String serviceName, String endpoint, Exception e) {
+    String correlationId = correlationIdService.getCurrentCorrelationId();
+    String traceId = generateTraceId();
+    
+    errorEventService.logExternalServiceError(
+        serviceName,
+        endpoint,
+        500,
+        "External service error: " + e.getMessage(),
+        correlationId,
+        traceId,
+        e
+    );
 }
 ```
 
-### **Find All Proxy Errors**
-```json
-{
-  "query": {
-    "term": {
-      "errorType": "PROXY_ERROR"
-    }
-  }
+### 3. Logging Performance Metrics
+
+```java
+@Autowired
+private LoggingEventService loggingEventService;
+
+public void logDatabaseOperation(String operation, long durationMs) {
+    String correlationId = correlationIdService.getCurrentCorrelationId();
+    String traceId = generateTraceId();
+    
+    Map<String, Object> metrics = new HashMap<>();
+    metrics.put("operation", operation);
+    metrics.put("durationMs", durationMs);
+    metrics.put("timestamp", System.currentTimeMillis());
+    
+    loggingEventService.logPerformanceMetrics(
+        operation,
+        durationMs,
+        metrics,
+        correlationId,
+        traceId
+    );
 }
 ```
 
-## 📊 **Monitoring & Alerting**
+## Security Considerations
 
-### **Key Metrics to Monitor**
-- **Error Rate**: Percentage of failed requests
-- **Response Time**: P50, P95, P99 percentiles
-- **Correlation Coverage**: Percentage of requests with correlation IDs
-- **MongoDB Error Storage**: Success rate of error persistence
+### Data Sanitization
 
-### **Recommended Alerts**
-- Error rate > 5% in 5 minutes
-- Response time P95 > 10 seconds
-- MongoDB error storage failures
-- Missing correlation IDs
+The logging system automatically sanitizes sensitive data:
 
-## 🛠️ **Troubleshooting**
+1. **Headers**: Authorization, password, secret, and token headers are redacted
+2. **Request/Response Bodies**: Sensitive fields like passwords, SSNs, credit card numbers are redacted
+3. **Context Data**: Sensitive information in context data is filtered
 
-### **Common Issues**
+### Sanitization Examples
 
-1. **Missing Correlation IDs**
-   - Check if `CorrelationIdInterceptor` is registered
-   - Verify `WebConfig` includes the interceptor
+```java
+// Headers
+"Authorization: Bearer token123" → "Authorization: ***REDACTED***"
 
-2. **MongoDB Error Logging Fails**
-   - Check MongoDB connection string
-   - Verify `ErrorLoggingService` is properly configured
-   - Check MongoDB permissions
-
-3. **Log Files Not Created**
-   - Verify log directory permissions
-   - Check `logback-spring.xml` configuration
-   - Ensure proper file paths
-
-### **Debug Commands**
-```bash
-# Check log files
-tail -f logs/banking-onboarding-service.log
-tail -f logs/errors.log
-
-# Check MongoDB error logs
-mongo banking-onboarding --eval "db.error_logs.find().sort({timestamp: -1}).limit(10)"
-
-# Test correlation ID
-curl -H "X-Correlation-ID: TEST-123" http://localhost:8080/api/v1/health
+// JSON Body
+{
+  "username": "john.doe",
+  "password": "secret123",
+  "email": "john@example.com"
+}
+→
+{
+  "username": "john.doe", 
+  "password": "***REDACTED***",
+  "email": "john@example.com"
+}
 ```
 
-## 🎯 **Best Practices**
+## Monitoring and Alerting
 
-1. **Always use correlation IDs** for request tracing
-2. **Log errors immediately** when they occur
-3. **Sanitize sensitive data** before logging
-4. **Use structured logging** for better searchability
-5. **Monitor log file sizes** and implement rotation
-6. **Set up alerts** for critical error patterns
-7. **Regularly review** MongoDB error logs for patterns
+### Log Analysis
 
-## 📈 **Performance Impact**
+The structured JSON logs can be easily analyzed using:
+- **ELK Stack**: Elasticsearch, Logstash, Kibana
+- **Splunk**: Enterprise log analysis
+- **CloudWatch**: AWS cloud monitoring
+- **Grafana**: Visualization and alerting
 
-- **Minimal overhead**: Async logging and MongoDB writes
-- **Memory efficient**: Content caching with size limits
-- **Disk space**: Configurable rotation policies
-- **Network**: MongoDB writes are batched and async
+### Key Metrics to Monitor
 
-This comprehensive logging system provides full observability for the banking onboarding service with production-ready features for monitoring, debugging, and compliance.
+1. **Error Rates**: Track error frequency by type and service
+2. **Response Times**: Monitor API response times
+3. **External Service Health**: Track external API call success rates
+4. **Business Event Flow**: Monitor business process completion rates
+
+### Alerting Rules
+
+```yaml
+# Example alerting rules
+alerts:
+  - name: "High Error Rate"
+    condition: "error_count > 100 in 5 minutes"
+    severity: "critical"
+    
+  - name: "Slow Response Time"
+    condition: "avg_response_time > 5000ms in 5 minutes"
+    severity: "warning"
+    
+  - name: "External Service Down"
+    condition: "external_api_error_rate > 50% in 2 minutes"
+    severity: "critical"
+```
+
+## Best Practices
+
+### 1. Correlation ID Usage
+
+- Always use correlation IDs for request tracing
+- Pass correlation IDs to external services
+- Include correlation IDs in error reports
+
+### 2. Error Logging
+
+- Log errors immediately when they occur
+- Include sufficient context for debugging
+- Use appropriate error severity levels
+
+### 3. Performance Logging
+
+- Log performance metrics for critical operations
+- Include relevant business context
+- Monitor performance trends over time
+
+### 4. Security
+
+- Never log sensitive data
+- Use data sanitization features
+- Regularly audit logged data
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Missing Correlation IDs**: Ensure correlation ID service is properly configured
+2. **Log Volume**: Adjust log levels to control log volume
+3. **Database Performance**: Monitor MongoDB performance for error event storage
+4. **Memory Usage**: Monitor memory usage for request/response body logging
+
+### Debugging
+
+1. **Enable Debug Logging**: Set `logging.level.com.banking.onboarding.logging=DEBUG`
+2. **Check MongoDB**: Verify error events are being stored
+3. **Monitor Logs**: Use log analysis tools to identify patterns
+4. **Test Endpoints**: Use demo endpoints to verify logging functionality
+
+## Future Enhancements
+
+1. **Real-time Dashboards**: Create real-time monitoring dashboards
+2. **Machine Learning**: Implement anomaly detection for error patterns
+3. **Automated Alerting**: Set up automated alerting based on log patterns
+4. **Performance Optimization**: Optimize logging performance for high-volume scenarios
+5. **Data Retention**: Implement automated data retention policies
