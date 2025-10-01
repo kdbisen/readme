@@ -147,6 +147,22 @@ public class CorrelationIdService {
     }
     
     /**
+     * Get or generate correlation ID
+     */
+    public String getOrGenerateCorrelationId(String correlationId) {
+        if (correlationId != null && !correlationId.trim().isEmpty()) {
+            return correlationId;
+        }
+        
+        String currentCorrelationId = getCurrentCorrelationId();
+        if (!"NO-CORRELATION-ID".equals(currentCorrelationId)) {
+            return currentCorrelationId;
+        }
+        
+        return generateCorrelationId();
+    }
+    
+    /**
      * Check if correlation ID exists in current request
      */
     public boolean hasCorrelationId() {

@@ -1,27 +1,22 @@
 package com.banking.onboarding.auth;
 
-import lombok.Data;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-
-import java.util.Map;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * Token request for authentication service
+ * Simple Token Request model
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class TokenRequest {
-    
     private String grantType;
     private String clientId;
     private String clientSecret;
     private String scope;
-    private String audience;
-    private Map<String, Object> additionalClaims;
     
     public static TokenRequest clientCredentials(String clientId, String clientSecret, String scope) {
         return TokenRequest.builder()

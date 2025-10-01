@@ -5,75 +5,47 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.List;
 
 /**
- * Simplified Process Model - Main collection for tracking onboarding processes
+ * Onboarding Process Model
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "processes")
+@Document(collection = "onboarding_processes")
 public class OnboardingProcess {
     
     @Id
     private String id;
     
-    @Indexed(unique = true)
-    @Field("process_id")
+    @Indexed
     private String processId;
     
     @Indexed
-    @Field("correlation_id")
     private String correlationId;
     
-    @Field("request_type")
     private String requestType;
-    
-    @Field("status")
-    private String status; // INITIATED, PROCESSING, COMPLETED, FAILED
-    
-    @Field("current_step")
-    private String currentStep;
-    
-    @Field("message")
-    private String message;
-    
-    @Field("error_message")
+    private String inputData;
+    private ProcessStatus status;
     private String errorMessage;
     
-    @Field("payload")
-    private String payload;
-    
-    @Field("result_data")
-    private Map<String, Object> resultData;
-    
-    @Field("created_at")
     private LocalDateTime createdAt;
-    
-    @Field("updated_at")
     private LocalDateTime updatedAt;
-    
-    @Field("completed_at")
     private LocalDateTime completedAt;
     
-    // Helper methods
-    public void setIsCompleted(boolean completed) {
-        if (completed) {
-            this.status = "COMPLETED";
-            this.completedAt = LocalDateTime.now();
-        }
-    }
+    private List<ProcessStep> steps;
     
-    public void setHasError(boolean hasError) {
-        if (hasError) {
-            this.status = "FAILED";
-        }
+    public enum ProcessStatus {
+        PENDING,
+        IN_PROGRESS,
+        COMPLETED,
+        FAILED,
+        CANCELLED
     }
 }

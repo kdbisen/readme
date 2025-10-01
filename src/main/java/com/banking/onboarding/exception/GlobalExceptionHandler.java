@@ -1,205 +1,125 @@
 package com.banking.onboarding.exception;
 
-import com.banking.onboarding.logging.ErrorEventService;
 import com.banking.onboarding.service.CorrelationIdService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Global Exception Handler with Error Event Logging
+ * Global exception handler with clean error responses
  */
 @Slf4j
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
-    private final ErrorEventService errorEventService;
     private final CorrelationIdService correlationIdService;
 
     /**
-     * Handle runtime exceptions
+     * Handle validation errors
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationErrors(
+            MethodArgumentNotValidException ex, WebRequest request) {
+        
+        String correlationId = correlationIdService.getOrGenerateCorrelationId(null);
+        
+        Map<String, Object> details = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach(error -> {
+            String fieldName = ((org.springframework.validation.FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            details.put(fieldName, errorMessage);
+        });
+        
+        log.error("[CORRELATION:{}] Validation error: {}", correlationId, details);
+        
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .error("VALIDATION_ERROR")
+                .message("Request validation failed")
+                .status(HttpStatus.BAD_REQUEST)
+                .correlationId(correlationId)
+                .timestamp(java.time.LocalDateTime.now())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .details(details)
+                .build();
+        
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    /**
+     * Handle illegal argument errors
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+            IllegalArgumentException ex, WebRequest request) {
+        
+        String correlationId = correlationIdService.getOrGenerateCorrelationId(null);
+        
+        log.error("[CORRELATION:{}] Illegal argument: {}", correlationId, ex.getMessage());
+        
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .error("ILLEGAL_ARGUMENT")
+                .message(ex.getMessage())
+                .status(HttpStatus.BAD_REQUEST)
+                .correlationId(correlationId)
+                .timestamp(java.time.LocalDateTime.now())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    /**
+     * Handle runtime errors
      */
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex, WebRequest request) {
-        String correlationId = correlationIdService.getCurrentCorrelationId();
-        String traceId = generateTraceId();
+    public ResponseEntity<ErrorResponse> handleRuntimeException(
+            RuntimeException ex, WebRequest request) {
         
-        log.error("[CORRELATION:{}] Runtime exception occurred: {}", correlationId, ex.getMessage(), ex);
+        String correlationId = correlationIdService.getOrGenerateCorrelationId(null);
         
-        // Log error event
-        errorEventService.logApplicationError(
-            ex.getMessage(),
-            correlationId,
-            traceId,
-            "banking-onboarding-service",
-            "runtime-exception-handler",
-            ex
-        );
-
+        log.error("[CORRELATION:{}] Runtime error: {}", correlationId, ex.getMessage(), ex);
+        
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .error("RUNTIME_ERROR")
                 .message("An unexpected error occurred")
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .correlationId(correlationId)
-                .traceId(traceId)
+                .timestamp(java.time.LocalDateTime.now())
                 .path(request.getDescription(false).replace("uri=", ""))
                 .build();
-
+        
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
     /**
-     * Handle illegal argument exceptions
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
-        String correlationId = correlationIdService.getCurrentCorrelationId();
-        String traceId = generateTraceId();
-        
-        log.warn("[CORRELATION:{}] Illegal argument exception: {}", correlationId, ex.getMessage());
-        
-        // Log validation error
-        Map<String, Object> validationErrors = new HashMap<>();
-        validationErrors.put("argument", ex.getMessage());
-        
-        errorEventService.logValidationError(
-            ex.getMessage(),
-            correlationId,
-            traceId,
-            "banking-onboarding-service",
-            "illegal-argument-handler",
-            validationErrors
-        );
-
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("VALIDATION_ERROR")
-                .message("Invalid argument provided: " + ex.getMessage())
-                .status(HttpStatus.BAD_REQUEST.value())
-                .timestamp(LocalDateTime.now())
-                .correlationId(correlationId)
-                .traceId(traceId)
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-
-    /**
-     * Handle null pointer exceptions
-     */
-    @ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<ErrorResponse> handleNullPointerException(NullPointerException ex, WebRequest request) {
-        String correlationId = correlationIdService.getCurrentCorrelationId();
-        String traceId = generateTraceId();
-        
-        log.error("[CORRELATION:{}] Null pointer exception: {}", correlationId, ex.getMessage(), ex);
-        
-        // Log application error
-        errorEventService.logApplicationError(
-            "Null pointer exception: " + ex.getMessage(),
-            correlationId,
-            traceId,
-            "banking-onboarding-service",
-            "null-pointer-handler",
-            ex
-        );
-
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("NULL_POINTER_ERROR")
-                .message("A null pointer exception occurred")
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .timestamp(LocalDateTime.now())
-                .correlationId(correlationId)
-                .traceId(traceId)
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-    }
-
-    /**
-     * Handle illegal state exceptions
-     */
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex, WebRequest request) {
-        String correlationId = correlationIdService.getCurrentCorrelationId();
-        String traceId = generateTraceId();
-        
-        log.warn("[CORRELATION:{}] Illegal state exception: {}", correlationId, ex.getMessage());
-        
-        // Log business logic error
-        Map<String, Object> businessContext = new HashMap<>();
-        businessContext.put("state", ex.getMessage());
-        
-        errorEventService.logBusinessLogicError(
-            "ILLEGAL_STATE",
-            ex.getMessage(),
-            correlationId,
-            traceId,
-            "banking-onboarding-service",
-            "illegal-state-handler",
-            businessContext
-        );
-
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("ILLEGAL_STATE_ERROR")
-                .message("Invalid state: " + ex.getMessage())
-                .status(HttpStatus.CONFLICT.value())
-                .timestamp(LocalDateTime.now())
-                .correlationId(correlationId)
-                .traceId(traceId)
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-    }
-
-    /**
-     * Handle generic exceptions
+     * Handle all other exceptions
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, WebRequest request) {
-        String correlationId = correlationIdService.getCurrentCorrelationId();
-        String traceId = generateTraceId();
+    public ResponseEntity<ErrorResponse> handleGenericException(
+            Exception ex, WebRequest request) {
         
-        log.error("[CORRELATION:{}] Generic exception occurred: {}", correlationId, ex.getMessage(), ex);
+        String correlationId = correlationIdService.getOrGenerateCorrelationId(null);
         
-        // Log system error
-        errorEventService.logSystemError(
-            "GENERIC_EXCEPTION_HANDLER",
-            ex.getMessage(),
-            correlationId,
-            traceId,
-            ex
-        );
-
+        log.error("[CORRELATION:{}] Generic error: {}", correlationId, ex.getMessage(), ex);
+        
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("GENERIC_ERROR")
-                .message("An unexpected error occurred")
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .timestamp(LocalDateTime.now())
+                .error("INTERNAL_ERROR")
+                .message("An internal server error occurred")
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .correlationId(correlationId)
-                .traceId(traceId)
+                .timestamp(java.time.LocalDateTime.now())
                 .path(request.getDescription(false).replace("uri=", ""))
                 .build();
-
+        
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-    }
-
-    /**
-     * Generate trace ID
-     */
-    private String generateTraceId() {
-        return "TRACE-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }

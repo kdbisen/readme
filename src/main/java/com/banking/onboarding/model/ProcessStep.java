@@ -6,67 +6,49 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
+/**
+ * Process Step Model
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProcessStep {
-    private StepName stepName;
-    private StepStatus stepStatus;
-    private String stepMessage;
-    private ProcessStepTiming timing;
-    private Map<String, Object> outputData;
-    private ProcessStepErrorInfo errorInfo;
-    private ProcessStepRetryInfo retryInfo;
     
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ProcessStepTiming {
-        private Long startTime;
-        private Long endTime;
-        private Long duration;
-        private Long queueTime;
-        private Long processingTime;
+    private String stepId;
+    private String stepName;
+    private StepStatus status;
+    private String inputData;
+    private String outputData;
+    private String errorMessage;
+    private LocalDateTime startedAt;
+    private LocalDateTime completedAt;
+    private long durationMs;
+    
+    public enum StepStatus {
+        PENDING,
+        IN_PROGRESS,
+        COMPLETED,
+        FAILED,
+        SKIPPED
     }
     
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ProcessStepErrorInfo {
-        private Boolean hasError;
-        private String errorCode;
-        private String errorMessage;
-        private String errorType;
-        private LocalDateTime errorTimestamp;
-        private String stackTrace;
-        private Map<String, Object> errorContext;
-    }
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ProcessStepRetryInfo {
-        private Integer maxRetries;
-        private Integer currentRetry;
-        private String retryReason;
-        private Long retryDelay;
-        private java.util.List<RetryAttempt> retryHistory;
-    }
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class RetryAttempt {
-        private Integer attemptNumber;
-        private LocalDateTime attemptTime;
-        private String attemptReason;
-        private String attemptResult;
+    public enum StepName {
+        STEP_1_XML_TO_JSON_TRANSFORMATION("XML to JSON Transformation"),
+        STEP_2_FENERGO_ENTITY_CREATE("Fenergo Entity Creation"),
+        STEP_3_FENERGO_JOURNEY_INFO("Fenergo Journey Information"),
+        STEP_4_FENERGO_JOURNEY_INITIATE("Fenergo Journey Initiation"),
+        STEP_5_FENERGO_JOURNEY_DETAILS("Fenergo Journey Details");
+        
+        private final String description;
+        
+        StepName(String description) {
+            this.description = description;
+        }
+        
+        public String getDescription() {
+            return description;
+        }
     }
 }

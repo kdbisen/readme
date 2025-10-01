@@ -135,7 +135,7 @@ public class FenergoTokenService {
                 JwtToken token = JwtToken.builder()
                         .accessToken((String) responseBody.get("access_token"))
                         .tokenType((String) responseBody.getOrDefault("token_type", "Bearer"))
-                        .expiresIn(getLongValue(responseBody.get("expires_in")))
+                        .expiresIn(getIntegerValue(responseBody.get("expires_in")))
                         .scope((String) responseBody.get("scope"))
                         .issuedAt(LocalDateTime.now())
                         .build();
@@ -174,7 +174,7 @@ public class FenergoTokenService {
         JwtToken mockToken = JwtToken.builder()
                 .accessToken("mock-jwt-token-" + scope + "-" + System.currentTimeMillis())
                 .tokenType("Bearer")
-                .expiresIn(3600L) // 1 hour
+                .expiresIn(3600) // 1 hour
                 .scope(scope)
                 .issuedAt(LocalDateTime.now())
                 .expiresAt(LocalDateTime.now().plusHours(1))
@@ -182,6 +182,19 @@ public class FenergoTokenService {
         
         log.info("Created mock token for scope: {}, expires at: {}", scope, mockToken.getExpiresAt());
         return mockToken;
+    }
+    
+    private Integer getIntegerValue(Object value) {
+        if (value == null) return null;
+        if (value instanceof Number) return ((Number) value).intValue();
+        if (value instanceof String) {
+            try {
+                return Integer.parseInt((String) value);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
     
     private Long getLongValue(Object value) {
