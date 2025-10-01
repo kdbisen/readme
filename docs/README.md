@@ -2,9 +2,9 @@
 
 This folder contains the essential documentation for the Banking Onboarding Service.
 
-## Current Documentation
+## 📚 Current Documentation
 
-### 📋 [Complete-Fenergo-Integration-Flow.md](./Complete-Fenergo-Integration-Flow.md)
+### 🚀 [Complete-Fenergo-Integration-Flow.md](./Complete-Fenergo-Integration-Flow.md)
 **Main Implementation Guide**
 - Complete 4-step Fenergo integration flow
 - Exact API patterns and request/response examples
@@ -20,7 +20,7 @@ This folder contains the essential documentation for the Banking Onboarding Serv
 - Easy testing and debugging patterns
 - Step implementation examples
 
-### 📚 [Generic-Step-Pattern-Tutorial.md](./Generic-Step-Pattern-Tutorial.md)
+### 📖 [Generic-Step-Pattern-Tutorial.md](./Generic-Step-Pattern-Tutorial.md)
 **Step Management Tutorial**
 - How to add new steps to the flow
 - How to modify existing steps
@@ -28,6 +28,23 @@ This folder contains the essential documentation for the Banking Onboarding Serv
 - Step dependencies and configuration
 - Testing strategies and best practices
 - Troubleshooting guide
+
+### ⚡ [Step-Management-Quick-Reference.md](./Step-Management-Quick-Reference.md)
+**Quick Reference Guide**
+- Current step overview with priorities and dependencies
+- Execution order modes (Priority-based vs Order-based)
+- Quick action commands for common operations
+- Configuration file locations
+- Testing commands with curl examples
+- Code templates for quick copy-paste
+
+### 🎯 [Consolidated-Step-Configuration-Guide.md](./Consolidated-Step-Configuration-Guide.md)
+**Configuration Management**
+- Consolidated step configuration setup
+- All step info (name, priority, dependencies) in one place
+- Easy step modification examples
+- Step definition structure and best practices
+- Version control friendly configuration
 
 ### 📊 [Comprehensive-Logging-System.md](./Comprehensive-Logging-System.md)
 **Logging & Monitoring**
@@ -53,54 +70,56 @@ This folder contains the essential documentation for the Banking Onboarding Serv
 - Technical debt analysis
 - Performance considerations
 
-## Quick Start
+## 🎯 Quick Start Guide
 
-1. **For Implementation**: Start with `Complete-Fenergo-Integration-Flow.md`
-2. **For Architecture Understanding**: Read `Generic-Step-Pattern-Documentation.md`
-3. **For Step Management**: Follow `Generic-Step-Pattern-Tutorial.md`
-4. **For Monitoring Setup**: Follow `Comprehensive-Logging-System.md`
-5. **For Error Handling**: Review `Comprehensive-Exception-Handling-System.md`
-6. **For Project Overview**: Review `Project-Analysis-Report.md`
+### For New Developers
+1. **Start Here**: [Complete-Fenergo-Integration-Flow.md](./Complete-Fenergo-Integration-Flow.md)
+2. **Understand Architecture**: [Generic-Step-Pattern-Documentation.md](./Generic-Step-Pattern-Documentation.md)
+3. **Learn Step Management**: [Generic-Step-Pattern-Tutorial.md](./Generic-Step-Pattern-Tutorial.md)
 
-## API Endpoints
+### For Step Management
+1. **Quick Reference**: [Step-Management-Quick-Reference.md](./Step-Management-Quick-Reference.md)
+2. **Configuration Guide**: [Consolidated-Step-Configuration-Guide.md](./Consolidated-Step-Configuration-Guide.md)
+3. **Detailed Tutorial**: [Generic-Step-Pattern-Tutorial.md](./Generic-Step-Pattern-Tutorial.md)
+
+### For Operations & Monitoring
+1. **Logging Setup**: [Comprehensive-Logging-System.md](./Comprehensive-Logging-System.md)
+2. **Error Handling**: [Comprehensive-Exception-Handling-System.md](./Comprehensive-Exception-Handling-System.md)
+3. **Project Analysis**: [Project-Analysis-Report.md](./Project-Analysis-Report.md)
+
+## 🔧 API Endpoints
 
 - **Main Flow**: `POST /api/v1/onboarding/process-entity`
 - **Step Testing**: `POST /api/v1/onboarding/test/step/{stepName}`
 - **Status Check**: `GET /api/v1/onboarding/status/{processId}`
 - **Health Check**: `GET /api/v1/onboarding/health`
 
-## Configuration
+## ⚙️ Configuration
 
 All configuration is done via `application.properties` and environment variables. See the main documentation for details.
 
-## Step Management
+## 🎯 Current Step Flow
 
-The system uses a flexible, configurable step pattern that allows easy modification of the onboarding flow:
+The system uses a flexible, configurable step pattern with **consolidated configuration**:
 
 ### Current Steps (4)
-1. **XML_TO_JSON_TRANSFORMATION** - Transform XML to JSON via Apigee
-2. **FENERGO_ENTITY_CREATION** - Create entity in Fenergo
-3. **FENERGO_JOURNEY_SCHEMA_EVALUATION** - Evaluate journey schema
-4. **FENERGO_JOURNEY_LAUNCH** - Launch Fenergo journey
+1. **XML_TO_JSON_TRANSFORMATION** (Priority: 1) - Transform XML to JSON via Apigee
+2. **FENERGO_ENTITY_CREATION** (Priority: 2) - Create entity in Fenergo
+3. **FENERGO_JOURNEY_SCHEMA_EVALUATION** (Priority: 3) - Evaluate journey schema
+4. **FENERGO_JOURNEY_LAUNCH** (Priority: 4) - Launch Fenergo journey
 
-### Adding New Steps
-- Create step implementation class
-- Update step configuration loader
-- Add to application properties
-- Update dependencies
+### Execution Order Modes
+- **Priority-Based** (Default): Steps execute by priority number (1, 2, 3, 4...)
+- **Order-Based** (Legacy): Steps execute in definition order
 
-### Modifying Steps
-- Edit step implementation logic
-- Update step configuration
-- Modify dependencies if needed
-
-### Removing Steps
-- Remove from configuration
-- Update dependencies
-- Delete implementation class
-
-*See `Generic-Step-Pattern-Tutorial.md` for detailed instructions.*
+### Key Features
+- ✅ **Consolidated Configuration** - All step info in one place
+- ✅ **Flexible Ordering** - Priority-based or order-based execution
+- ✅ **Dependency Management** - Steps wait for dependencies
+- ✅ **Easy Maintenance** - Change one definition to update everything
+- ✅ **Comprehensive Logging** - Correlation ID tracking throughout
+- ✅ **Robust Error Handling** - Detailed error responses with suggestions
 
 ---
 
-*This documentation reflects the current synchronous, generic step pattern implementation with complete Fenergo integration and comprehensive exception handling.*
+*This documentation reflects the current synchronous, generic step pattern implementation with complete Fenergo integration, consolidated configuration, and comprehensive exception handling.*
