@@ -13,19 +13,19 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * Simplified Process Model - Main collection for tracking onboarding processes
+ * Simplified Step Model - Individual step tracking
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "processes")
-public class OnboardingProcess {
+@Document(collection = "steps")
+public class Step {
     
     @Id
     private String id;
     
-    @Indexed(unique = true)
+    @Indexed
     @Field("process_id")
     private String processId;
     
@@ -33,14 +33,14 @@ public class OnboardingProcess {
     @Field("correlation_id")
     private String correlationId;
     
-    @Field("request_type")
-    private String requestType;
+    @Field("step_name")
+    private String stepName; // APIGEE_TRANSFORM, ENTITY_CREATE, JOURNEY_INFO, etc.
+    
+    @Field("step_order")
+    private int stepOrder; // 1, 2, 3, 4, 5
     
     @Field("status")
-    private String status; // INITIATED, PROCESSING, COMPLETED, FAILED
-    
-    @Field("current_step")
-    private String currentStep;
+    private String status; // PENDING, IN_PROGRESS, COMPLETED, FAILED
     
     @Field("message")
     private String message;
@@ -48,11 +48,20 @@ public class OnboardingProcess {
     @Field("error_message")
     private String errorMessage;
     
-    @Field("payload")
-    private String payload;
+    @Field("input_data")
+    private String inputData;
     
-    @Field("result_data")
-    private Map<String, Object> resultData;
+    @Field("output_data")
+    private String outputData;
+    
+    @Field("step_data")
+    private Map<String, Object> stepData;
+    
+    @Field("duration_ms")
+    private long durationMs;
+    
+    @Field("retry_count")
+    private int retryCount;
     
     @Field("created_at")
     private LocalDateTime createdAt;
@@ -62,18 +71,4 @@ public class OnboardingProcess {
     
     @Field("completed_at")
     private LocalDateTime completedAt;
-    
-    // Helper methods
-    public void setIsCompleted(boolean completed) {
-        if (completed) {
-            this.status = "COMPLETED";
-            this.completedAt = LocalDateTime.now();
-        }
-    }
-    
-    public void setHasError(boolean hasError) {
-        if (hasError) {
-            this.status = "FAILED";
-        }
-    }
 }

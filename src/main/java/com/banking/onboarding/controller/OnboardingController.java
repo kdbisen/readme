@@ -1,13 +1,18 @@
 package com.banking.onboarding.controller;
 
 import com.banking.onboarding.model.RequestType;
+import com.banking.onboarding.model.ProcessEntityResponse;
+import com.banking.onboarding.model.ProcessStatusResponse;
+import com.banking.onboarding.model.JourneyDetailsResponse;
 import com.banking.onboarding.service.CorrelationIdService;
-import com.banking.onboarding.service.FenergoJourneyService;
+import com.banking.onboarding.service.SimplifiedFenergoJourneyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 import java.util.UUID;
 
@@ -20,7 +25,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OnboardingController {
 
-    private final FenergoJourneyService fenergoJourneyService;
+    private final SimplifiedFenergoJourneyService simplifiedFenergoJourneyService;
     private final CorrelationIdService correlationIdService;
 
     /**
@@ -51,8 +56,8 @@ public class OnboardingController {
             log.info("[CORRELATION:{}] Starting Fenergo journey processing - ProcessId: {}, RequestType: {}", 
                     correlationId, processId, requestType);
             
-            // Start async processing
-            fenergoJourneyService.processFenergoJourneyAsync(payload, requestType, processId, correlationId);
+        // Start async processing
+        simplifiedFenergoJourneyService.processFenergoJourneyAsync(payload, requestType, processId, correlationId);
             
             // Return immediate response
             ProcessEntityResponse response = ProcessEntityResponse.builder()
@@ -61,7 +66,7 @@ public class OnboardingController {
                     .status("PROCESSING")
                     .message("Fenergo journey processing initiated successfully")
                     .requestType(requestType)
-                    .timestamp(System.currentTimeMillis())
+                    .timestamp(LocalDateTime.now())
                     .build();
             
             log.info("[CORRELATION:{}] Fenergo journey processing initiated - ProcessId: {}", 
@@ -79,7 +84,7 @@ public class OnboardingController {
                     .status("FAILED")
                     .message("Failed to initiate Fenergo journey processing: " + e.getMessage())
                     .requestType(requestType)
-                    .timestamp(System.currentTimeMillis())
+                    .timestamp(LocalDateTime.now())
                     .build();
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
@@ -96,7 +101,7 @@ public class OnboardingController {
             
             log.info("[CORRELATION:{}] Getting process status - ProcessId: {}", correlationId, processId);
             
-            ProcessStatusResponse status = fenergoJourneyService.getProcessStatus(processId);
+            ProcessStatusResponse status = simplifiedFenergoJourneyService.getProcessStatus(processId);
             
             if (status == null) {
                 log.warn("[CORRELATION:{}] Process not found - ProcessId: {}", correlationId, processId);
@@ -120,13 +125,13 @@ public class OnboardingController {
      * Get journey details by process ID
      */
     @GetMapping("/journey/{processId}")
-    public ResponseEntity<JourneyDetailsResponse> getJourneyDetails(@PathVariable String processId) {
+    public ResponseEntity<ProcessStatusResponse> getJourneyDetails(@PathVariable String processId) {
         try {
             String correlationId = correlationIdService.getCurrentCorrelationId();
             
             log.info("[CORRELATION:{}] Getting journey details - ProcessId: {}", correlationId, processId);
             
-            JourneyDetailsResponse journeyDetails = fenergoJourneyService.getJourneyDetails(processId);
+            ProcessStatusResponse journeyDetails = simplifiedFenergoJourneyService.getProcessStatus(processId);
             
             if (journeyDetails == null) {
                 log.warn("[CORRELATION:{}] Journey details not found - ProcessId: {}", correlationId, processId);
