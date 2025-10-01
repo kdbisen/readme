@@ -63,7 +63,7 @@ public class ErrorEvent {
     private String environment; // e.g., dev, test, prod
 
     @Field("version")
-    private String version; // Application version
+    private String appVersion; // Application version
 
     @Field("severity")
     private String severity; // e.g., ERROR, WARN, INFO

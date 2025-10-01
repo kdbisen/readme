@@ -5,12 +5,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
-import java.time.Duration;
 import java.util.Map;
 
 /**
@@ -21,7 +22,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class FenergoProxyService {
     
-    private final WebClient webClient;
+    private final RestClient restClient;
     private final JwtTokenService jwtTokenService;
     
     /**
@@ -46,27 +47,24 @@ public class FenergoProxyService {
             HttpHeaders headers = buildHeaders(fenergoEndpoint, authType, authScope);
             
             // Make the call
-            WebClient.ResponseSpec responseSpec = webClient
+            ResponseEntity<String> response = restClient
                     .method(method)
                     .uri(proxyUrl)
                     .headers(h -> h.addAll(headers))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(payload)
-                    .retrieve();
+                    .body(payload != null ? payload : "")
+                    .retrieve()
+                    .toEntity(String.class);
             
-            // Get response
-            String responseBody = responseSpec.bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(30))
-                    .block();
+            String responseBody = response.getBody();
+            int statusCode = response.getStatusCode().value();
             
-            log.info("Proxy call successful to: {}", proxyUrl);
+            log.info("Proxy call successful to: {} - Status: {}", proxyUrl, statusCode);
             return ProxyResponse.success(responseBody, fenergoEndpoint);
             
-        } catch (WebClientResponseException e) {
-            log.error("Proxy call failed to: {} - Status: {}, Body: {}", 
-                    proxyUrl, e.getStatusCode(), e.getResponseBodyAsString());
-            return ProxyResponse.error(e.getStatusCode().value(), 
-                    e.getResponseBodyAsString(), fenergoEndpoint, e.getMessage());
+        } catch (RestClientException e) {
+            log.error("Proxy call failed to: {} - Error: {}", proxyUrl, e.getMessage());
+            return ProxyResponse.error(500, "Proxy call failed", fenergoEndpoint, e.getMessage());
             
         } catch (Exception e) {
             log.error("Unexpected error in proxy call to: {}", proxyUrl, e);
@@ -129,14 +127,12 @@ public class FenergoProxyService {
      */
     public boolean isProxyAvailable(String proxyUrl) {
         try {
-            webClient
+            ResponseEntity<String> response = restClient
                     .get()
                     .uri(proxyUrl + "/health")
                     .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(5))
-                    .block();
-            return true;
+                    .toEntity(String.class);
+            return response.getStatusCode().is2xxSuccessful();
         } catch (Exception e) {
             log.warn("Proxy not available at: {}", proxyUrl);
             return false;

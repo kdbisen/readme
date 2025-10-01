@@ -6,48 +6,52 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.util.retry.Retry;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * Generic HTTP client for API bridge operations - Using WebClient (BEST MODERN ALTERNATIVE)
+ * Generic HTTP client for API bridge operations - Using RestClient
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class GenericHttpClient {
     
-    private final WebClient webClient;
+    private final RestClient restClient;
     private final ObjectMapper objectMapper;
     
     private final JwtTokenService jwtTokenService;
     
     /**
-     * Execute API request using WebClient with automatic JWT token handling
+     * Execute API request using RestClient with automatic JWT token handling
      */
     public ApiResponse execute(ApiRequest request) {
         long startTime = System.currentTimeMillis();
         
         try {
-            log.info("[CORRELATION:{}] WebClient executing {} request to: {}", 
+            log.info("[CORRELATION:{}] RestClient executing {} request to: {}", 
                     request.getCorrelationId(), request.getMethod(), request.getEndpoint());
             
-            // Build WebClient request
-            WebClient.RequestBodySpec requestSpec = webClient
+            // Build RestClient request with query parameters
+            String endpoint = request.getEndpoint();
+            if (request.getQueryParams() != null && !request.getQueryParams().isEmpty()) {
+                StringBuilder uriBuilder = new StringBuilder(endpoint);
+                uriBuilder.append("?");
+                request.getQueryParams().forEach((key, value) -> 
+                        uriBuilder.append(key).append("=").append(value).append("&"));
+                endpoint = uriBuilder.toString().replaceAll("&$", "");
+            }
+            
+            RestClient.RequestBodySpec requestSpec = restClient
                     .method(HttpMethod.valueOf(request.getMethod()))
-                    .uri(request.getEndpoint(), uriBuilder -> {
-                        if (request.getQueryParams() != null) {
-                            request.getQueryParams().forEach(uriBuilder::queryParam);
-                        }
-                        return uriBuilder.build();
-                    })
+                    .uri(endpoint)
                     .contentType(MediaType.APPLICATION_JSON);
             
             // Add headers
@@ -72,44 +76,41 @@ public class GenericHttpClient {
             // Add body for POST/PUT requests
             if (request.getPayload() != null && 
                 (request.getMethod().equals("POST") || request.getMethod().equals("PUT"))) {
-                requestSpec.bodyValue(request.getPayload());
+                requestSpec.body(request.getPayload());
             }
             
-            // Execute with retry and timeout
-            String responseBody = requestSpec
+            // Execute request
+            ResponseEntity<String> response = requestSpec
                     .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.ofMillis(request.getTimeoutMs()))
-                    .retryWhen(Retry.fixedDelay(request.getRetryAttempts(), Duration.ofMillis(1000)))
-                    .block();
+                    .toEntity(String.class);
             
             long responseTime = System.currentTimeMillis() - startTime;
-            Object responseData = parseResponse(responseBody);
+            Object responseData = parseResponse(response.getBody());
             
-            log.info("[CORRELATION:{}] WebClient request completed successfully in {}ms", 
+            log.info("[CORRELATION:{}] RestClient request completed successfully in {}ms", 
                     request.getCorrelationId(), responseTime);
             
             return ApiResponse.builder()
                     .success(true)
-                    .statusCode(200)
-                    .statusText("OK")
+                    .statusCode(response.getStatusCode().value())
+                    .statusText(response.getStatusCode().toString())
                     .data(responseData)
                     .correlationId(request.getCorrelationId())
                     .timestamp(LocalDateTime.now())
                     .responseTimeMs(responseTime)
                     .build();
                     
-        } catch (WebClientResponseException e) {
+        } catch (RestClientException e) {
             long responseTime = System.currentTimeMillis() - startTime;
             
-            log.error("[CORRELATION:{}] WebClient HTTP error {}: {}", 
-                    request.getCorrelationId(), e.getStatusCode(), e.getResponseBodyAsString());
+            log.error("[CORRELATION:{}] RestClient HTTP error: {}", 
+                    request.getCorrelationId(), e.getMessage());
             
             return ApiResponse.builder()
                     .success(false)
-                    .statusCode(e.getStatusCode().value())
-                    .statusText(e.getStatusText())
-                    .errorMessage(e.getResponseBodyAsString())
+                    .statusCode(500)
+                    .statusText("HTTP_ERROR")
+                    .errorMessage(e.getMessage())
                     .correlationId(request.getCorrelationId())
                     .timestamp(LocalDateTime.now())
                     .responseTimeMs(responseTime)
@@ -118,7 +119,7 @@ public class GenericHttpClient {
         } catch (Exception e) {
             long responseTime = System.currentTimeMillis() - startTime;
             
-            log.error("[CORRELATION:{}] WebClient unexpected error: {}", 
+            log.error("[CORRELATION:{}] RestClient unexpected error: {}", 
                     request.getCorrelationId(), e.getMessage(), e);
             
             return ApiResponse.builder()

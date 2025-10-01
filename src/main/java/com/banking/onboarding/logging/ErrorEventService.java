@@ -40,7 +40,7 @@ public class ErrorEventService {
                     .contextData(contextData != null ? contextData : new HashMap<>())
                     .timestamp(LocalDateTime.now())
                     .environment(System.getProperty("ENVIRONMENT", "dev"))
-                    .version(System.getProperty("APP_VERSION", "1.0.0"))
+                    .appVersion(System.getProperty("APP_VERSION", "1.0.0"))
                     .build();
 
             errorEventRepository.save(errorEvent);

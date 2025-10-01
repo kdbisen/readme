@@ -6,21 +6,27 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestClient;
 
 /**
- * Configuration for the API Bridge system with WebClient
+ * Configuration for the API Bridge system with RestClient
  */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class ApiBridgeConfig {
     
-    // WebClient Configuration - BEST MODERN ALTERNATIVE
+    // RestClient Configuration
     @Bean
-    public WebClient webClient() {
-        return WebClient.builder()
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
+    public RestClient webClient() {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(10000);
+        requestFactory.setReadTimeout(30000);
+        
+        return RestClient.builder()
+                .requestFactory(requestFactory)
                 .build();
     }
     

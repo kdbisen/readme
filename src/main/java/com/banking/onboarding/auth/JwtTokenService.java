@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -35,7 +37,7 @@ public class JwtTokenService {
     @Value("${auth.token-service.cache-enabled:true}")
     private boolean cacheEnabled;
     
-    private final WebClient webClient;
+    private final RestClient restClient;
     private final ObjectMapper objectMapper;
     
     // Token cache - key: scope, value: JwtToken
@@ -120,20 +122,20 @@ public class JwtTokenService {
             
             log.info("Fetching token from: {} with scope: {}", tokenServiceUrl, scope);
             
-            Map<String, Object> response = webClient
+            ResponseEntity<Map> response = restClient
                     .post()
                     .uri(tokenServiceUrl)
-                    .bodyValue(tokenRequest)
+                    .body(tokenRequest)
                     .retrieve()
-                    .bodyToMono(Map.class)
-                    .block();
+                    .toEntity(Map.class);
             
-            if (response != null) {
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Map<String, Object> responseBody = response.getBody();
                 JwtToken token = JwtToken.builder()
-                        .accessToken((String) response.get("access_token"))
-                        .tokenType((String) response.getOrDefault("token_type", "Bearer"))
-                        .expiresIn(getLongValue(response.get("expires_in")))
-                        .scope((String) response.get("scope"))
+                        .accessToken((String) responseBody.get("access_token"))
+                        .tokenType((String) responseBody.getOrDefault("token_type", "Bearer"))
+                        .expiresIn(getLongValue(responseBody.get("expires_in")))
+                        .scope((String) responseBody.get("scope"))
                         .issuedAt(LocalDateTime.now())
                         .build();
                 
@@ -148,9 +150,9 @@ public class JwtTokenService {
                 return token;
             }
             
-        } catch (WebClientResponseException e) {
-            log.warn("Failed to fetch token from external service for scope: {}, status: {}, response: {}. Using mock token.", 
-                    scope, e.getStatusCode(), e.getResponseBodyAsString());
+        } catch (RestClientException e) {
+            log.warn("Failed to fetch token from external service for scope: {}, error: {}. Using mock token.", 
+                    scope, e.getMessage());
             return createMockToken(scope);
         } catch (Exception e) {
             log.warn("Unexpected error fetching token for scope: {}. Using mock token.", scope, e);
