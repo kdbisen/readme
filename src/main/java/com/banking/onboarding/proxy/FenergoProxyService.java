@@ -1,6 +1,6 @@
 package com.banking.onboarding.proxy;
 
-import com.banking.onboarding.auth.JwtTokenService;
+import com.banking.onboarding.auth.FenergoTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -23,7 +23,7 @@ import java.util.Map;
 public class FenergoProxyService {
     
     private final RestClient restClient;
-    private final JwtTokenService jwtTokenService;
+    private final FenergoTokenService fenergoTokenService;
     
     /**
      * Make a proxy call to Fenergo API
@@ -102,7 +102,7 @@ public class FenergoProxyService {
      */
     private String getJwtToken(String scope) {
         try {
-            return jwtTokenService.getToken(scope).getAccessToken();
+            return fenergoTokenService.getToken(scope).getAccessToken();
         } catch (Exception e) {
             log.error("Failed to get JWT token for scope: {}", scope, e);
             throw new ProxyException("Failed to get JWT token", e);
@@ -115,7 +115,7 @@ public class FenergoProxyService {
     private String getOcinToken(String scope) {
         try {
             // For now, use JWT service - can be extended for OCIN
-            return jwtTokenService.getToken(scope).getAccessToken();
+            return fenergoTokenService.getToken(scope).getAccessToken();
         } catch (Exception e) {
             log.error("Failed to get OCIN token for scope: {}", scope, e);
             throw new ProxyException("Failed to get OCIN token", e);

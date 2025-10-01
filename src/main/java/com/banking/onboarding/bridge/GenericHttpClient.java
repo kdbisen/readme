@@ -1,7 +1,7 @@
 package com.banking.onboarding.bridge;
 
 import com.banking.onboarding.auth.JwtToken;
-import com.banking.onboarding.auth.JwtTokenService;
+import com.banking.onboarding.auth.FenergoTokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +27,7 @@ public class GenericHttpClient {
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     
-    private final JwtTokenService jwtTokenService;
+    private final FenergoTokenService fenergoTokenService;
     
     /**
      * Execute API request using RestClient with automatic JWT token handling
@@ -62,7 +62,7 @@ public class GenericHttpClient {
             
             // Add JWT token if authentication is required
             if (request.getAuthRequired() != null && request.getAuthRequired()) {
-                JwtToken token = jwtTokenService.getToken(request.getAuthScope());
+                JwtToken token = fenergoTokenService.getToken(request.getAuthScope());
                 if (token != null && token.isValid()) {
                     String authHeader = token.getTokenType() + " " + token.getAccessToken();
                     requestSpec.header("Authorization", authHeader);

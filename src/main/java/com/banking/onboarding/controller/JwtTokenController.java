@@ -1,7 +1,7 @@
 package com.banking.onboarding.controller;
 
 import com.banking.onboarding.auth.JwtToken;
-import com.banking.onboarding.auth.JwtTokenService;
+import com.banking.onboarding.auth.FenergoTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,14 +18,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JwtTokenController {
     
-    private final JwtTokenService jwtTokenService;
+    private final FenergoTokenService fenergoTokenService;
     
     /**
      * Get JWT token for default scope
      */
     @GetMapping("/token")
     public ResponseEntity<JwtToken> getToken() {
-        JwtToken token = jwtTokenService.getToken();
+        JwtToken token = fenergoTokenService.getToken();
         if (token != null && token.isValid()) {
             return ResponseEntity.ok(token);
         }
@@ -37,7 +37,7 @@ public class JwtTokenController {
      */
     @GetMapping("/token/{scope}")
     public ResponseEntity<JwtToken> getToken(@PathVariable String scope) {
-        JwtToken token = jwtTokenService.getToken(scope);
+        JwtToken token = fenergoTokenService.getToken(scope);
         if (token != null && token.isValid()) {
             return ResponseEntity.ok(token);
         }
@@ -49,7 +49,7 @@ public class JwtTokenController {
      */
     @PostMapping("/token/{scope}/refresh")
     public ResponseEntity<JwtToken> refreshToken(@PathVariable String scope) {
-        JwtToken token = jwtTokenService.refreshToken(scope);
+        JwtToken token = fenergoTokenService.refreshToken(scope);
         if (token != null && token.isValid()) {
             return ResponseEntity.ok(token);
         }
@@ -61,7 +61,7 @@ public class JwtTokenController {
      */
     @DeleteMapping("/cache")
     public ResponseEntity<Map<String, String>> clearCache() {
-        jwtTokenService.clearCache();
+        fenergoTokenService.clearCache();
         return ResponseEntity.ok(Map.of("message", "Token cache cleared"));
     }
     
@@ -70,7 +70,7 @@ public class JwtTokenController {
      */
     @DeleteMapping("/cache/{scope}")
     public ResponseEntity<Map<String, String>> clearCache(@PathVariable String scope) {
-        jwtTokenService.clearCache(scope);
+        fenergoTokenService.clearCache(scope);
         return ResponseEntity.ok(Map.of("message", "Token cache cleared for scope: " + scope));
     }
     
@@ -79,7 +79,7 @@ public class JwtTokenController {
      */
     @GetMapping("/token/{scope}/validate")
     public ResponseEntity<Map<String, Object>> validateToken(@PathVariable String scope) {
-        JwtToken token = jwtTokenService.getToken(scope);
+        JwtToken token = fenergoTokenService.getToken(scope);
         Map<String, Object> response = Map.of(
                 "valid", token != null && token.isValid(),
                 "expired", token != null && token.isExpired(),
