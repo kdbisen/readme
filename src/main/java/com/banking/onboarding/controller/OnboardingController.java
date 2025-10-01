@@ -49,11 +49,11 @@ public class OnboardingController {
     // ===========================================
 
     /**
-     * Process entity onboarding - Main entry point with complete 5-step flow
+     * Process entity onboarding - Main entry point with complete 5-step flow - SYNCHRONOUS
      * Handles XML input, transforms to JSON, and executes all Fenergo steps with database persistence
      */
     @PostMapping("/process-entity")
-    public CompletableFuture<ResponseEntity<OnboardingProcess>> processEntity(
+    public ResponseEntity<OnboardingProcess> processEntity(
             @RequestBody Map<String, String> request,
             @RequestHeader(value = "X-Correlation-ID", required = false) String correlationId) {
         
@@ -62,19 +62,16 @@ public class OnboardingController {
         String requestType = request.getOrDefault("requestType", "ADD_KYC");
         
         if (xmlData == null || xmlData.trim().isEmpty()) {
-            return CompletableFuture.completedFuture(
-                    ResponseEntity.badRequest().build()
-            );
+            throw new com.banking.onboarding.exception.ValidationException(
+                    "XML data is required and cannot be empty", actualCorrelationId);
         }
         
         log.info("[CORRELATION:{}] Starting complete 5-step entity onboarding process", actualCorrelationId);
         
-        return genericOnboardingFlowService.executeCompleteFlow(xmlData, requestType, actualCorrelationId)
-                .thenApply(process -> {
-                    log.info("[CORRELATION:{}] Complete onboarding process finished with status: {}", 
-                            actualCorrelationId, process.getStatus());
-                    return ResponseEntity.ok(process);
-                });
+        OnboardingProcess process = genericOnboardingFlowService.executeCompleteFlow(xmlData, requestType, actualCorrelationId);
+        log.info("[CORRELATION:{}] Complete onboarding process finished with status: {}", 
+                actualCorrelationId, process.getStatus());
+        return ResponseEntity.ok(process);
     }
 
     /**
@@ -84,13 +81,8 @@ public class OnboardingController {
     public ResponseEntity<OnboardingProcess> getProcessStatus(@PathVariable String processId) {
         log.info("Getting process status for processId: {}", processId);
         
-        try {
-            OnboardingProcess process = genericOnboardingFlowService.getProcessById(processId);
-            return ResponseEntity.ok(process);
-        } catch (RuntimeException e) {
-            log.error("Process not found: {}", processId);
-            return ResponseEntity.notFound().build();
-        }
+        OnboardingProcess process = genericOnboardingFlowService.getProcessById(processId);
+        return ResponseEntity.ok(process);
     }
 
     // ===========================================
@@ -268,10 +260,10 @@ public class OnboardingController {
     }
     
     /**
-     * Test individual step execution
+     * Test individual step execution - SYNCHRONOUS
      */
     @PostMapping("/test/step/{stepName}")
-    public CompletableFuture<ResponseEntity<com.banking.onboarding.step.StepResult<?>>> testStep(
+    public ResponseEntity<com.banking.onboarding.step.StepResult<Object>> testStep(
             @PathVariable String stepName,
             @RequestBody Map<String, String> request,
             @RequestHeader(value = "X-Correlation-ID", required = false) String correlationId) {
@@ -280,14 +272,18 @@ public class OnboardingController {
         String inputData = request.get("inputData");
         
         if (inputData == null || inputData.trim().isEmpty()) {
-            return CompletableFuture.completedFuture(
-                    ResponseEntity.badRequest().build()
-            );
+            return ResponseEntity.badRequest().build();
         }
         
         log.info("[CORRELATION:{}] Testing step: {}", actualCorrelationId, stepName);
         
-        return genericOnboardingFlowService.executeStep(stepName, inputData, actualCorrelationId)
-                .thenApply(ResponseEntity::ok);
+        try {
+            com.banking.onboarding.step.StepResult<Object> result = 
+                    genericOnboardingFlowService.executeStep(stepName, inputData, actualCorrelationId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("[CORRELATION:{}] Step test failed: {}", actualCorrelationId, e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

@@ -1,16 +1,14 @@
 package com.banking.onboarding.step;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
- * Generic Step Executor Interface - Works with any data type
+ * Generic Step Executor Interface - Synchronous approach for better simplicity and debugging
  */
 public interface GenericStepExecutor {
     
     /**
-     * Execute the step with generic context
+     * Execute the step with generic context - SYNCHRONOUS
      */
-    CompletableFuture<StepResult<Object>> execute(GenericStepContext context);
+    StepResult<Object> execute(GenericStepContext context);
     
     /**
      * Get step configuration
@@ -30,17 +28,16 @@ public interface GenericStepExecutor {
     }
     
     /**
-     * Handle step failure
+     * Handle step failure - SYNCHRONOUS
      */
-    default CompletableFuture<StepResult<Object>> handleFailure(GenericStepContext context, Throwable error) {
-        return CompletableFuture.completedFuture(
-                StepResult.<Object>builder()
-                        .success(false)
-                        .errorMessage(error.getMessage())
-                        .stepName(getStepName())
-                        .correlationId(context.getCorrelationId())
-                        .build()
-        );
+    default StepResult<Object> handleFailure(GenericStepContext context, Exception error) {
+        return StepResult.<Object>builder()
+                .success(false)
+                .errorMessage(error.getMessage())
+                .stepName(getStepName())
+                .correlationId(context.getCorrelationId())
+                .completedAt(java.time.LocalDateTime.now())
+                .build();
     }
     
     /**

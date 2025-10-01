@@ -12,18 +12,19 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Generic XML to JSON Transformation Step - SYNCHRONOUS
+ * Step 0: XML to JSON Transformation via Apigee (Internal API) - SYNCHRONOUS
+ * Transforms XML input data to JSON format using internal Apigee service
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class GenericXmlToJsonTransformationStep implements GenericStepExecutor {
+public class XmlToJsonTransformationStep implements GenericStepExecutor {
     
     private final TransformationService transformationService;
     
     @Override
     public StepResult<Object> execute(GenericStepContext context) {
-        log.info("[CORRELATION:{}] Executing XML to JSON transformation", context.getCorrelationId());
+        log.info("[CORRELATION:{}] Executing Step 0: XML to JSON transformation via Apigee", context.getCorrelationId());
         
         // Get input data - can be String or any other type
         Object inputData = getInputData(context);
@@ -43,13 +44,18 @@ public class GenericXmlToJsonTransformationStep implements GenericStepExecutor {
             if (response.isSuccess()) {
                 // Store result in context for next steps
                 context.addStepResult(getStepName(), response.getBody());
+                
+                log.info("[CORRELATION:{}] Step 0 completed successfully. XML transformed to JSON: {} chars", 
+                        context.getCorrelationId(), 
+                        response.getBody() != null ? response.getBody().toString().length() : 0);
+                
                 return StepResult.success(response.getBody(), getStepName(), context.getCorrelationId());
             } else {
                 return StepResult.failure(response.getErrorMessage(), getStepName(), context.getCorrelationId());
             }
         } catch (Exception e) {
-            log.error("[CORRELATION:{}] XML to JSON transformation failed: {}", context.getCorrelationId(), e.getMessage());
-            return StepResult.failure("Transformation failed: " + e.getMessage(), getStepName(), context.getCorrelationId());
+            log.error("[CORRELATION:{}] Step 0 failed: {}", context.getCorrelationId(), e.getMessage());
+            return StepResult.failure("XML to JSON transformation failed: " + e.getMessage(), getStepName(), context.getCorrelationId());
         }
     }
     
@@ -57,12 +63,12 @@ public class GenericXmlToJsonTransformationStep implements GenericStepExecutor {
     public StepConfig getConfig() {
         return StepConfig.builder()
                 .stepName(getStepName())
-                .description("Transform XML data to JSON format via Apigee")
+                .description("Transform XML data to JSON format via internal Apigee service")
                 .retryEnabled(true)
                 .maxRetries(3)
                 .retryDelayMs(1000)
                 .backoffMultiplier(2.0)
-                .asyncEnabled(false) // Now synchronous
+                .asyncEnabled(false)
                 .timeoutMs(30000)
                 .build();
     }

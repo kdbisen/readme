@@ -33,9 +33,9 @@ public class GenericOnboardingFlowService {
     private final MonitoringService monitoringService;
     
     /**
-     * Execute complete onboarding flow using generic step pattern
+     * Execute complete onboarding flow using generic step pattern - SYNCHRONOUS
      */
-    public CompletableFuture<OnboardingProcess> executeCompleteFlow(String xmlData, String requestType, String correlationId) {
+    public OnboardingProcess executeCompleteFlow(String xmlData, String requestType, String correlationId) {
         String actualCorrelationId = correlationIdService.getOrGenerateCorrelationId(correlationId);
         String processId = "PROC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         
@@ -55,7 +55,7 @@ public class GenericOnboardingFlowService {
             processRepository.save(failedProcess);
             monitoringService.recordProcessCompletion(false);
             
-            return CompletableFuture.completedFuture(failedProcess);
+            return failedProcess;
         }
         
         log.info("[CORRELATION:{}] Validation passed. Warnings: {}", actualCorrelationId, validation.getWarningMessage());
@@ -66,28 +66,52 @@ public class GenericOnboardingFlowService {
         
         // Load step configurations
         List<com.banking.onboarding.step.StepConfig> stepConfigs = stepConfigurationLoader.loadStepConfigurations();
-        List<String> stepNames = stepConfigs.stream()
-                .map(com.banking.onboarding.step.StepConfig::getStepName)
-                .toList();
+        
+        // Determine execution order based on configuration
+        List<String> stepNames;
+        if (stepConfigurationLoader.isPriorityBasedExecution()) {
+            // Sort steps by priority (lower number = higher priority)
+            stepNames = stepConfigs.stream()
+                    .sorted((config1, config2) -> {
+                        // Get priority from step properties
+                        Map<String, Object> props1 = config1.getProperties();
+                        Map<String, Object> props2 = config2.getProperties();
+                        
+                        int priority1 = (Integer) props1.getOrDefault("priority", 99);
+                        int priority2 = (Integer) props2.getOrDefault("priority", 99);
+                        
+                        return Integer.compare(priority1, priority2);
+                    })
+                    .map(com.banking.onboarding.step.StepConfig::getStepName)
+                    .toList();
+            
+            log.info("[CORRELATION:{}] Using priority-based execution order: {}", actualCorrelationId, stepNames);
+        } else {
+            // Use order-based execution (original behavior)
+            stepNames = stepConfigs.stream()
+                    .map(com.banking.onboarding.step.StepConfig::getStepName)
+                    .toList();
+            
+            log.info("[CORRELATION:{}] Using order-based execution order: {}", actualCorrelationId, stepNames);
+        }
         
         // Create generic step context - can handle any data type
         GenericStepContext context = GenericStepContext.create(actualCorrelationId, processId, xmlData);
         
-        // Execute steps using the generic step execution engine
-        return stepExecutionEngine.executeSteps(stepNames, context)
-                .thenApply(stepResult -> {
-                    if (stepResult.isSuccess()) {
-                        return finalizeProcessSuccess(process, stepResult.getData(), context);
-                    } else {
-                        return finalizeProcessFailure(process, stepResult.getErrorMessage());
-                    }
-                });
+        // Execute steps using the generic step execution engine - SYNCHRONOUS
+        StepResult<Map<String, Object>> stepResult = stepExecutionEngine.executeSteps(stepNames, context);
+        
+        if (stepResult.isSuccess()) {
+            return finalizeProcessSuccess(process, stepResult.getData(), context);
+        } else {
+            return finalizeProcessFailure(process, stepResult.getErrorMessage());
+        }
     }
     
     /**
-     * Execute individual step for testing
+     * Execute individual step for testing - SYNCHRONOUS
      */
-    public CompletableFuture<StepResult<Object>> executeStep(String stepName, Object inputData, String correlationId) {
+    public StepResult<Object> executeStep(String stepName, Object inputData, String correlationId) {
         String actualCorrelationId = correlationIdService.getOrGenerateCorrelationId(correlationId);
         
         GenericStepContext context = GenericStepContext.create(actualCorrelationId, 
@@ -101,7 +125,8 @@ public class GenericOnboardingFlowService {
      */
     public OnboardingProcess getProcessById(String processId) {
         return processRepository.findById(processId)
-                .orElseThrow(() -> new RuntimeException("Process not found: " + processId));
+                .orElseThrow(() -> new com.banking.onboarding.exception.ProcessException(
+                        "Process not found with ID: " + processId));
     }
     
     /**

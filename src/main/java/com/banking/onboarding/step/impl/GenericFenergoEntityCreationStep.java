@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Generic Fenergo Entity Creation Step
+ * Generic Fenergo Entity Creation Step - SYNCHRONOUS
  */
 @Slf4j
 @Component
@@ -22,28 +22,34 @@ public class GenericFenergoEntityCreationStep implements GenericStepExecutor {
     private final FenergoService fenergoService;
     
     @Override
-    public CompletableFuture<StepResult<Object>> execute(GenericStepContext context) {
-        log.info("[CORRELATION:{}] Executing generic Fenergo entity creation", context.getCorrelationId());
+    public StepResult<Object> execute(GenericStepContext context) {
+        log.info("[CORRELATION:{}] Executing Fenergo entity creation", context.getCorrelationId());
         
         // Get input data from previous step or initial input
         Object inputData = getInputData(context);
         
         if (inputData == null) {
-            return CompletableFuture.completedFuture(
-                    StepResult.failure("No input data available", getStepName(), context.getCorrelationId())
-            );
+            return StepResult.failure("No input data available", getStepName(), context.getCorrelationId());
         }
         
-        return fenergoService.createEntity(inputData, context.getCorrelationId())
-                .thenApply(response -> {
-                    if (response.isSuccess()) {
-                        // Store result in context for next steps
-                        context.addStepResult(getStepName(), response.getBody());
-                        return StepResult.success(response.getBody(), getStepName(), context.getCorrelationId());
-                    } else {
-                        return StepResult.failure(response.getErrorMessage(), getStepName(), context.getCorrelationId());
-                    }
-                });
+        try {
+            // Execute Fenergo service call synchronously by blocking on CompletableFuture
+            CompletableFuture<com.banking.onboarding.domain.ApiResponse> future = 
+                    fenergoService.createEntity(inputData, context.getCorrelationId());
+            
+            com.banking.onboarding.domain.ApiResponse response = future.get(); // Block here
+            
+            if (response.isSuccess()) {
+                // Store result in context for next steps
+                context.addStepResult(getStepName(), response.getBody());
+                return StepResult.success(response.getBody(), getStepName(), context.getCorrelationId());
+            } else {
+                return StepResult.failure(response.getErrorMessage(), getStepName(), context.getCorrelationId());
+            }
+        } catch (Exception e) {
+            log.error("[CORRELATION:{}] Fenergo entity creation failed: {}", context.getCorrelationId(), e.getMessage());
+            return StepResult.failure("Entity creation failed: " + e.getMessage(), getStepName(), context.getCorrelationId());
+        }
     }
     
     @Override
@@ -55,7 +61,7 @@ public class GenericFenergoEntityCreationStep implements GenericStepExecutor {
                 .maxRetries(3)
                 .retryDelayMs(2000)
                 .backoffMultiplier(2.0)
-                .asyncEnabled(true)
+                .asyncEnabled(false) // Now synchronous
                 .timeoutMs(60000)
                 .dependencies(new String[]{"XML_TO_JSON_TRANSFORMATION"})
                 .build();

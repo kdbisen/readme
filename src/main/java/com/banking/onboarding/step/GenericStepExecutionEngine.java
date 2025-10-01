@@ -7,11 +7,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Generic Step Execution Engine - Orchestrates step execution with generic data sharing
+ * Generic Step Execution Engine - Synchronous approach for better simplicity and debugging
  */
 @Slf4j
 @Service
@@ -30,14 +29,12 @@ public class GenericStepExecutionEngine {
     }
     
     /**
-     * Execute a single step
+     * Execute a single step - SYNCHRONOUS
      */
-    public CompletableFuture<StepResult<Object>> executeStep(String stepName, GenericStepContext context) {
+    public StepResult<Object> executeStep(String stepName, GenericStepContext context) {
         GenericStepExecutor executor = stepExecutors.get(stepName);
         if (executor == null) {
-            return CompletableFuture.completedFuture(
-                    StepResult.failure("No step executor found for: " + stepName, stepName, context.getCorrelationId())
-            );
+            return StepResult.failure("No step executor found for: " + stepName, stepName, context.getCorrelationId());
         }
         
         StepConfig config = executor.getConfig();
@@ -47,80 +44,82 @@ public class GenericStepExecutionEngine {
         
         // Check if step can be executed
         if (!executor.canExecute(context)) {
-            return CompletableFuture.completedFuture(
-                    StepResult.failure("Step cannot be executed", stepName, context.getCorrelationId())
-            );
+            return StepResult.failure("Step cannot be executed", stepName, context.getCorrelationId());
         }
         
-        // Execute step
+        // Execute step synchronously
         return executeOnce(executor, context);
     }
     
     /**
-     * Execute multiple steps in sequence with generic data sharing
+     * Execute multiple steps in sequence with generic data sharing - SYNCHRONOUS
      */
-    public CompletableFuture<StepResult<Map<String, Object>>> executeSteps(List<String> stepNames, GenericStepContext initialContext) {
+    public StepResult<Map<String, Object>> executeSteps(List<String> stepNames, GenericStepContext initialContext) {
         GenericStepContext context = initialContext;
         Map<String, Object> results = new ConcurrentHashMap<>();
         
-        CompletableFuture<StepResult<Map<String, Object>>> future = CompletableFuture.completedFuture(
-                StepResult.success(results, "INITIAL", initialContext.getCorrelationId())
-        );
+        log.info("[CORRELATION:{}] Starting sequential execution of {} steps", 
+                context.getCorrelationId(), stepNames.size());
         
         for (String stepName : stepNames) {
-            final String currentStepName = stepName;
-            future = future.thenCompose(prevResult -> {
-                if (!prevResult.isSuccess()) {
-                    return CompletableFuture.completedFuture(prevResult);
-                }
+            log.info("[CORRELATION:{}] Executing step: {}", context.getCorrelationId(), stepName);
+            
+            StepResult<Object> stepResult = executeStep(stepName, context);
+            
+            if (stepResult.isSuccess()) {
+                // Store result in context for next steps
+                context.addStepResult(stepName, stepResult.getData());
+                results.put(stepName, stepResult.getData());
                 
-                return executeStep(currentStepName, context)
-                        .thenApply(stepResult -> {
-                            if (stepResult.isSuccess()) {
-                                // Store result in context for next steps
-                                context.addStepResult(currentStepName, stepResult.getData());
-                                results.put(currentStepName, stepResult.getData());
-                                
-                                log.info("[CORRELATION:{}] Step {} completed successfully. Data shared: {}", 
-                                        context.getCorrelationId(), currentStepName, 
-                                        stepResult.getData() != null ? stepResult.getData().getClass().getSimpleName() : "null");
-                                
-                                return StepResult.success(results, "SEQUENCE", context.getCorrelationId());
-                            } else {
-                                return StepResult.failure(
-                                        "Step " + currentStepName + " failed: " + stepResult.getErrorMessage(),
-                                        "SEQUENCE", context.getCorrelationId()
-                                );
-                            }
-                        });
-            });
+                log.info("[CORRELATION:{}] Step {} completed successfully. Data shared: {}", 
+                        context.getCorrelationId(), stepName, 
+                        stepResult.getData() != null ? stepResult.getData().getClass().getSimpleName() : "null");
+            } else {
+                log.error("[CORRELATION:{}] Step {} failed: {}", 
+                        context.getCorrelationId(), stepName, stepResult.getErrorMessage());
+                
+                return StepResult.failure(
+                        "Step " + stepName + " failed: " + stepResult.getErrorMessage(),
+                        "SEQUENCE", context.getCorrelationId()
+                );
+            }
         }
         
-        return future;
+        log.info("[CORRELATION:{}] All {} steps completed successfully", 
+                context.getCorrelationId(), stepNames.size());
+        
+        return StepResult.success(results, "SEQUENCE", context.getCorrelationId());
     }
     
     /**
-     * Execute step once
+     * Execute step once - SYNCHRONOUS
      */
-    private CompletableFuture<StepResult<Object>> executeOnce(GenericStepExecutor executor, GenericStepContext context) {
+    private StepResult<Object> executeOnce(GenericStepExecutor executor, GenericStepContext context) {
         long startTime = System.currentTimeMillis();
         
-        return executor.execute(context)
-                .thenApply(result -> {
-                    long duration = System.currentTimeMillis() - startTime;
-                    result.setDurationMs(duration);
-                    result.setCompletedAt(LocalDateTime.now());
-                    
-                    log.info("[CORRELATION:{}] Step {} completed in {}ms", 
-                            context.getCorrelationId(), executor.getStepName(), duration);
-                    
-                    return result;
-                })
-                .exceptionally(throwable -> {
-                    log.error("[CORRELATION:{}] Step {} failed: {}", 
-                            context.getCorrelationId(), executor.getStepName(), throwable.getMessage());
-                    return executor.handleFailure(context, throwable).join();
-                });
+        try {
+            StepResult<Object> result = executor.execute(context);
+            long duration = System.currentTimeMillis() - startTime;
+            
+            result.setDurationMs(duration);
+            result.setCompletedAt(LocalDateTime.now());
+            
+            log.info("[CORRELATION:{}] Step {} completed in {}ms", 
+                    context.getCorrelationId(), executor.getStepName(), duration);
+            
+            return result;
+        } catch (Exception e) {
+            long duration = System.currentTimeMillis() - startTime;
+            
+            log.error("[CORRELATION:{}] Step {} failed after {}ms: {}", 
+                    context.getCorrelationId(), executor.getStepName(), duration, e.getMessage());
+            
+            StepResult<Object> failureResult = executor.handleFailure(context, e);
+            failureResult.setDurationMs(duration);
+            failureResult.setCompletedAt(LocalDateTime.now());
+            
+            return failureResult;
+        }
     }
     
     /**
