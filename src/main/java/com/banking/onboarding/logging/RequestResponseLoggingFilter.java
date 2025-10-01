@@ -201,8 +201,12 @@ public class RequestResponseLoggingFilter implements Filter {
         }
 
         public String getBody() {
-            flushBuffer();
-            return outputStream.toString();
+            try {
+                flushBuffer();
+                return outputStream.toString();
+            } catch (IOException e) {
+                return "Error reading body: " + e.getMessage();
+            }
         }
     }
 
