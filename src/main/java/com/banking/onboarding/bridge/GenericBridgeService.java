@@ -9,12 +9,14 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Unified Generic Bridge Service
@@ -30,13 +32,14 @@ public class GenericBridgeService {
     private final FenergoTokenService fenergoTokenService;
     
     /**
-     * Execute API request through appropriate proxy and token service
+     * Execute API request through appropriate proxy and token service (Async)
      */
-    public BridgeResponse execute(BridgeRequest request) {
+    @Async("bridgeTaskExecutor")
+    public CompletableFuture<BridgeResponse> execute(BridgeRequest request) {
         long startTime = System.currentTimeMillis();
         
         try {
-            log.info("[CORRELATION:{}] Executing {} request to {} via {} proxy", 
+            log.info("[CORRELATION:{}] Executing async {} request to {} via {} proxy", 
                     request.getCorrelationId(), request.getMethod(), request.getEndpoint(), 
                     request.getApiProvider().getCode());
             
@@ -48,10 +51,10 @@ public class GenericBridgeService {
             
             long responseTime = System.currentTimeMillis() - startTime;
             
-            log.info("[CORRELATION:{}] Request completed successfully in {}ms", 
+            log.info("[CORRELATION:{}] Async request completed successfully in {}ms", 
                     request.getCorrelationId(), responseTime);
             
-            return BridgeResponse.builder()
+            BridgeResponse bridgeResponse = BridgeResponse.builder()
                     .success(true)
                     .statusCode(response.getStatusCode().value())
                     .statusText(response.getStatusCode().toString())
@@ -62,13 +65,15 @@ public class GenericBridgeService {
                     .apiProvider(request.getApiProvider())
                     .endpoint(request.getEndpoint())
                     .build();
+            
+            return CompletableFuture.completedFuture(bridgeResponse);
                     
         } catch (RestClientException e) {
             long responseTime = System.currentTimeMillis() - startTime;
             
-            log.error("[CORRELATION:{}] HTTP error: {}", request.getCorrelationId(), e.getMessage());
+            log.error("[CORRELATION:{}] HTTP error in async request: {}", request.getCorrelationId(), e.getMessage());
             
-            return BridgeResponse.builder()
+            BridgeResponse bridgeResponse = BridgeResponse.builder()
                     .success(false)
                     .statusCode(500)
                     .statusText("HTTP_ERROR")
@@ -79,13 +84,15 @@ public class GenericBridgeService {
                     .apiProvider(request.getApiProvider())
                     .endpoint(request.getEndpoint())
                     .build();
+            
+            return CompletableFuture.completedFuture(bridgeResponse);
                     
         } catch (Exception e) {
             long responseTime = System.currentTimeMillis() - startTime;
             
-            log.error("[CORRELATION:{}] Unexpected error: {}", request.getCorrelationId(), e.getMessage(), e);
+            log.error("[CORRELATION:{}] Unexpected error in async request: {}", request.getCorrelationId(), e.getMessage(), e);
             
-            return BridgeResponse.builder()
+            BridgeResponse bridgeResponse = BridgeResponse.builder()
                     .success(false)
                     .statusCode(500)
                     .statusText("INTERNAL_ERROR")
@@ -96,6 +103,8 @@ public class GenericBridgeService {
                     .apiProvider(request.getApiProvider())
                     .endpoint(request.getEndpoint())
                     .build();
+            
+            return CompletableFuture.completedFuture(bridgeResponse);
         }
     }
     
