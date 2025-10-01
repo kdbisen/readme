@@ -35,13 +35,12 @@ public class SimplifiedFenergoJourneyService {
     private final FenergoJourneyService fenergoJourneyService;
     private final ProcessRepository processRepository;
     private final StepRepository stepRepository;
-    private final LogRepository logRepository;
     private final CorrelationIdService correlationIdService;
 
     /**
      * Process Fenergo journey asynchronously
      */
-    @Async
+    @Async("functionalTaskExecutor")
     public void processFenergoJourneyAsync(String payload, RequestType requestType, 
                                          String processId, String correlationId) {
         
