@@ -1,0 +1,33 @@
+{
+  "customer": {
+    "personalInfo": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john.doe@example.com",
+      "phone": "+1234567890",
+      "dateOfBirth": "1990-01-15"
+    },
+    "address": {
+      "street": "123 Main Street",
+      "city": "New York",
+      "state": "NY",
+      "zipCode": "10001",
+      "country": "USA"
+    },
+    "kycInfo": {
+      "documentType": "PASSPORT",
+      "documentNumber": "P123456789",
+      "issueDate": "2020-01-01",
+      "expiryDate": "2030-01-01",
+      "issuingAuthority": "US Department of State"
+    },
+    "financialInfo": {
+      "annualIncome": 75000,
+      "employmentStatus": "EMPLOYED",
+      "employer": "Tech Corp Inc"
+    }
+  },
+  "requestType": "ADD_KYC",
+  "submissionDate": "2024-01-15T10:30:00Z",
+  "priority": "NORMAL"
+}

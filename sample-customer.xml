@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customer>
+    <personalInfo>
+        <firstName>Jane</firstName>
+        <lastName>Smith</lastName>
+        <email>jane.smith@example.com</email>
+        <phone>+1987654321</phone>
+        <dateOfBirth>1985-05-20</dateOfBirth>
+    </personalInfo>
+    <address>
+        <street>456 Oak Avenue</street>
+        <city>Los Angeles</city>
+        <state>CA</state>
+        <zipCode>90210</zipCode>
+        <country>USA</country>
+    </address>
+    <kycInfo>
+        <documentType>DRIVERS_LICENSE</documentType>
+        <documentNumber>DL987654321</documentNumber>
+        <issueDate>2019-06-15</issueDate>
+        <expiryDate>2029-06-15</expiryDate>
+        <issuingAuthority>California DMV</issuingAuthority>
+    </kycInfo>
+    <financialInfo>
+        <annualIncome>85000</annualIncome>
+        <employmentStatus>SELF_EMPLOYED</employmentStatus>
+        <employer>Smith Consulting LLC</employer>
+    </financialInfo>
+    <requestType>UPDATE_KYC</requestType>
+    <submissionDate>2024-01-15T14:45:00Z</submissionDate>
+    <priority>HIGH</priority>
+</customer>

@@ -230,7 +230,9 @@ public class SimplifiedFenergoJourneyService {
             processRepository.save(process);
         }
         
-        // Log error
+        // Log error using application logger
+        log.error("[CORRELATION:{}] Error in step {} - ProcessId: {}, Error: {}", 
+                correlationId, stepName, processId, errorMessage);
         Log errorLog = Log.builder()
                 .processId(processId)
                 .correlationId(correlationId)
@@ -241,8 +243,8 @@ public class SimplifiedFenergoJourneyService {
                 .contextData(Map.of("step", stepName))
                 .timestamp(LocalDateTime.now())
                 .build();
-        
-        logRepository.save(errorLog);
+
+        //logRepository.save(errorLog);
     }
 
     /**
