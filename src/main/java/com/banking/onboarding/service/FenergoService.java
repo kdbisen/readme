@@ -1,11 +1,12 @@
 package com.banking.onboarding.service;
 
-import com.banking.onboarding.domain.ApiRequest;
+import com.banking.onboarding.auth.FenergoTokenService;
 import com.banking.onboarding.domain.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -18,120 +19,120 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class FenergoService {
     
-    private final ApiService apiService;
+    private final RestClient restClient;
+    private final FenergoTokenService fenergoTokenService;
     
-    @Value("${fenergo.proxy.url:http://fenergo-proxy.com/api/v1/proxy}")
-    private String fenergoProxyUrl;
-    
-    @Value("${fenergo.entity.create.endpoint:https://fenergo.com/api/v1/entities}")
+    @Value("${fenergo.entity.api.url:https://fenergo.example.com/entity}")
     private String entityCreateEndpoint;
     
-    @Value("${fenergo.entity.create.auth-scope:fenergo-entity-create}")
-    private String entityCreateAuthScope;
+    @Value("${fenergo.logic.engine.url:https://fenergo.example.com/journeylogicengine/api/engine/evaluate-journey-schema}")
+    private String logicEngineEndpoint;
     
-    @Value("${fenergo.journey.info.endpoint:https://fenergo.com/api/v1/journeys/info}")
-    private String journeyInfoEndpoint;
+    @Value("${fenergo.journey.command.url:https://fenergo.example.com/api/journey-instance/launch-journey}")
+    private String journeyCommandEndpoint;
     
-    @Value("${fenergo.journey.info.auth-scope:fenergo-journey-info}")
-    private String journeyInfoAuthScope;
+    @Value("${fenergo.tenant.id:default-tenant}")
+    private String tenantId;
     
-    @Value("${fenergo.journey.initiate.endpoint:https://fenergo.com/api/v1/journeys/initiate}")
-    private String journeyInitiateEndpoint;
-    
-    @Value("${fenergo.journey.initiate.auth-scope:fenergo-journey-initiate}")
-    private String journeyInitiateAuthScope;
-    
-    @Value("${fenergo.journey.details.endpoint:https://fenergo.com/api/v1/journeys/details}")
-    private String journeyDetailsEndpoint;
-    
-    @Value("${fenergo.journey.details.auth-scope:fenergo-journey-details}")
-    private String journeyDetailsAuthScope;
+    @Value("${fenergo.auth.scope:fenergo-api}")
+    private String fenergoAuthScope;
     
     /**
-     * Create entity in Fenergo via proxy
+     * Create entity in Fenergo system
      */
-    public CompletableFuture<ApiResponse> createEntity(Object entityData, String correlationId) {
-        log.info("[CORRELATION:{}] Creating Fenergo entity", correlationId);
+    public CompletableFuture<ApiResponse> createEntity(Map<String, Object> entityData, String correlationId) {
+        log.info("[CORRELATION:{}] Creating entity in Fenergo", correlationId);
         
-        Map<String, String> fenergoHeaders = Map.of(
-                "X-Service-Type", "entity-create",
-                "X-Request-Source", "fenergo-service"
-        );
-        
-        return apiService.callExternalApi(
-                entityCreateEndpoint,
-                ApiRequest.HttpMethod.POST,
-                entityData,
-                entityCreateAuthScope,
-                fenergoProxyUrl,
-                fenergoHeaders,
-                correlationId
-        );
+        try {
+            // Get Fenergo JWT token
+            String token = fenergoTokenService.getToken(fenergoAuthScope).getAccessToken();
+            log.debug("[CORRELATION:{}] Using Fenergo JWT token for entity creation", correlationId);
+            
+            String response = restClient.post()
+                    .uri(entityCreateEndpoint)
+                    .header("X-Correlation-ID", correlationId)
+                    .header("Authorization", "Bearer " + token)
+                    .header("X-TENANT-ID", tenantId)
+                    .header("Content-Type", "application/json")
+                    .body(entityData)
+                    .retrieve()
+                    .body(String.class);
+            
+            return CompletableFuture.completedFuture(
+                ApiResponse.success(response, entityCreateEndpoint, correlationId)
+            );
+            
+        } catch (Exception e) {
+            log.error("[CORRELATION:{}] Entity creation failed: {}", correlationId, e.getMessage());
+            return CompletableFuture.completedFuture(
+                ApiResponse.error(500, e.getMessage(), entityCreateEndpoint, correlationId)
+            );
+        }
     }
     
     /**
-     * Get journey information from Fenergo via proxy
+     * Evaluate journey schema via Logic Engine
      */
-    public CompletableFuture<ApiResponse> getJourneyInfo(Object journeyData, String correlationId) {
-        log.info("[CORRELATION:{}] Getting Fenergo journey info", correlationId);
+    public CompletableFuture<ApiResponse> evaluateJourneySchema(Map<String, Object> evaluationData, String correlationId) {
+        log.info("[CORRELATION:{}] Evaluating journey schema", correlationId);
         
-        Map<String, String> fenergoHeaders = Map.of(
-                "X-Service-Type", "journey-info",
-                "X-Request-Source", "fenergo-service"
-        );
-        
-        return apiService.callExternalApi(
-                journeyInfoEndpoint,
-                ApiRequest.HttpMethod.POST,
-                journeyData,
-                journeyInfoAuthScope,
-                fenergoProxyUrl,
-                fenergoHeaders,
-                correlationId
-        );
+        try {
+            // Get Fenergo JWT token
+            String token = fenergoTokenService.getToken(fenergoAuthScope).getAccessToken();
+            log.debug("[CORRELATION:{}] Using Fenergo JWT token for schema evaluation", correlationId);
+            
+            String response = restClient.post()
+                    .uri(logicEngineEndpoint)
+                    .header("X-Correlation-ID", correlationId)
+                    .header("Authorization", "Bearer " + token)
+                    .header("X-TENANT-ID", tenantId)
+                    .header("Content-Type", "application/json")
+                    .body(evaluationData)
+                    .retrieve()
+                    .body(String.class);
+            
+            return CompletableFuture.completedFuture(
+                ApiResponse.success(response, logicEngineEndpoint, correlationId)
+            );
+            
+        } catch (Exception e) {
+            log.error("[CORRELATION:{}] Journey schema evaluation failed: {}", correlationId, e.getMessage());
+            return CompletableFuture.completedFuture(
+                ApiResponse.error(500, e.getMessage(), logicEngineEndpoint, correlationId)
+            );
+        }
     }
     
     /**
-     * Initiate journey in Fenergo via proxy
+     * Launch journey via Journey Command API
      */
-    public CompletableFuture<ApiResponse> initiateJourney(Object journeyData, String correlationId) {
-        log.info("[CORRELATION:{}] Initiating Fenergo journey", correlationId);
+    public CompletableFuture<ApiResponse> launchJourney(Map<String, Object> launchData, String correlationId) {
+        log.info("[CORRELATION:{}] Launching journey", correlationId);
         
-        Map<String, String> fenergoHeaders = Map.of(
-                "X-Service-Type", "journey-initiate",
-                "X-Request-Source", "fenergo-service"
-        );
-        
-        return apiService.callExternalApi(
-                journeyInitiateEndpoint,
-                ApiRequest.HttpMethod.POST,
-                journeyData,
-                journeyInitiateAuthScope,
-                fenergoProxyUrl,
-                fenergoHeaders,
-                correlationId
-        );
-    }
-    
-    /**
-     * Get journey details from Fenergo via proxy
-     */
-    public CompletableFuture<ApiResponse> getJourneyDetails(Object journeyData, String correlationId) {
-        log.info("[CORRELATION:{}] Getting Fenergo journey details", correlationId);
-        
-        Map<String, String> fenergoHeaders = Map.of(
-                "X-Service-Type", "journey-details",
-                "X-Request-Source", "fenergo-service"
-        );
-        
-        return apiService.callExternalApi(
-                journeyDetailsEndpoint,
-                ApiRequest.HttpMethod.POST,
-                journeyData,
-                journeyDetailsAuthScope,
-                fenergoProxyUrl,
-                fenergoHeaders,
-                correlationId
-        );
+        try {
+            // Get Fenergo JWT token
+            String token = fenergoTokenService.getToken(fenergoAuthScope).getAccessToken();
+            log.debug("[CORRELATION:{}] Using Fenergo JWT token for journey launch", correlationId);
+            
+            String response = restClient.post()
+                    .uri(journeyCommandEndpoint)
+                    .header("X-Correlation-ID", correlationId)
+                    .header("Authorization", "Bearer " + token)
+                    .header("X-TENANT-ID", tenantId)
+                    .header("Content-Type", "application/json")
+                    .body(launchData)
+                    .retrieve()
+                    .body(String.class);
+            
+            return CompletableFuture.completedFuture(
+                ApiResponse.success(response, journeyCommandEndpoint, correlationId)
+            );
+            
+        } catch (Exception e) {
+            log.error("[CORRELATION:{}] Journey launch failed: {}", correlationId, e.getMessage());
+            return CompletableFuture.completedFuture(
+                ApiResponse.error(500, e.getMessage(), journeyCommandEndpoint, correlationId)
+            );
+        }
     }
 }

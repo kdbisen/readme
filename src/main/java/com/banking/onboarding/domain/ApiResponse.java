@@ -21,30 +21,27 @@ public class ApiResponse {
     String correlationId;
     LocalDateTime timestamp;
     long responseTimeMs;
-    ApiType apiType;
     String endpoint;
     
-    public static ApiResponse success(String body, String endpoint, ApiType apiType, String correlationId) {
+    public static ApiResponse success(String body, String endpoint, String correlationId) {
         return ApiResponse.builder()
                 .success(true)
                 .statusCode(200)
                 .statusText("OK")
                 .body(body)
                 .endpoint(endpoint)
-                .apiType(apiType)
                 .correlationId(correlationId)
                 .timestamp(LocalDateTime.now())
                 .build();
     }
     
-    public static ApiResponse error(int statusCode, String errorMessage, String endpoint, ApiType apiType, String correlationId) {
+    public static ApiResponse error(int statusCode, String errorMessage, String endpoint, String correlationId) {
         return ApiResponse.builder()
                 .success(false)
                 .statusCode(statusCode)
                 .statusText("ERROR")
                 .errorMessage(errorMessage)
                 .endpoint(endpoint)
-                .apiType(apiType)
                 .correlationId(correlationId)
                 .timestamp(LocalDateTime.now())
                 .build();

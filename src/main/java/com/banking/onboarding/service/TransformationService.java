@@ -1,12 +1,12 @@
 package com.banking.onboarding.service;
 
-import com.banking.onboarding.domain.ApiRequest;
+import com.banking.onboarding.auth.ApigeeTokenService;
 import com.banking.onboarding.domain.ApiResponse;
-import com.banking.onboarding.domain.ApiType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -19,7 +19,8 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class TransformationService {
     
-    private final ApiService apiService;
+    private final RestClient restClient;
+    private final ApigeeTokenService apigeeTokenService;
     
     @Value("${apigee.transformation.endpoint:https://apigee-transformation-service.com/api/v1/transform}")
     private String transformationEndpoint;
@@ -33,22 +34,34 @@ public class TransformationService {
     public CompletableFuture<ApiResponse> transformXmlToJson(String xmlData, String correlationId) {
         log.info("[CORRELATION:{}] Initiating XML to JSON transformation", correlationId);
         
-        Map<String, String> transformationHeaders = Map.of(
-                "X-Service-Type", "transformation",
-                "X-Input-Format", "XML",
-                "X-Output-Format", "JSON"
-        );
-        
         Map<String, Object> payload = Map.of("inputData", xmlData);
         
-        return apiService.callInternalApi(
-                transformationEndpoint,
-                ApiRequest.HttpMethod.POST,
-                payload,
-                transformationAuthScope,
-                transformationHeaders,
-                correlationId
-        );
+        try {
+            // Get Apigee token for transformation API
+            String token = apigeeTokenService.getToken(transformationAuthScope);
+            log.debug("[CORRELATION:{}] Using Apigee token for transformation", correlationId);
+            
+            String response = restClient.post()
+                    .uri(transformationEndpoint)
+                    .header("X-Correlation-ID", correlationId)
+                    .header("Authorization", "Bearer " + token)
+                    .header("X-Service-Type", "transformation")
+                    .header("X-Input-Format", "XML")
+                    .header("X-Output-Format", "JSON")
+                    .body(payload)
+                    .retrieve()
+                    .body(String.class);
+            
+            return CompletableFuture.completedFuture(
+                ApiResponse.success(response, transformationEndpoint, correlationId)
+            );
+            
+        } catch (Exception e) {
+            log.error("[CORRELATION:{}] XML to JSON transformation failed: {}", correlationId, e.getMessage());
+            return CompletableFuture.completedFuture(
+                ApiResponse.error(500, e.getMessage(), transformationEndpoint, correlationId)
+            );
+        }
     }
     
     /**
@@ -57,51 +70,33 @@ public class TransformationService {
     public CompletableFuture<ApiResponse> transformJsonToXml(String jsonData, String correlationId) {
         log.info("[CORRELATION:{}] Initiating JSON to XML transformation", correlationId);
         
-        Map<String, String> transformationHeaders = Map.of(
-                "X-Service-Type", "transformation",
-                "X-Input-Format", "JSON",
-                "X-Output-Format", "XML"
-        );
-        
         Map<String, Object> payload = Map.of("inputData", jsonData);
         
-        return apiService.callInternalApi(
-                transformationEndpoint,
-                ApiRequest.HttpMethod.POST,
-                payload,
-                transformationAuthScope,
-                transformationHeaders,
-                correlationId
-        );
-    }
-    
-    /**
-     * Transform data with custom input/output formats
-     */
-    public CompletableFuture<ApiResponse> transformData(String inputData, String inputFormat, 
-                                                        String outputFormat, String correlationId) {
-        log.info("[CORRELATION:{}] Initiating custom transformation: {} -> {}", 
-                correlationId, inputFormat, outputFormat);
-        
-        Map<String, String> transformationHeaders = Map.of(
-                "X-Service-Type", "transformation",
-                "X-Input-Format", inputFormat,
-                "X-Output-Format", outputFormat
-        );
-        
-        Map<String, Object> payload = Map.of(
-                "inputData", inputData,
-                "inputFormat", inputFormat,
-                "outputFormat", outputFormat
-        );
-        
-        return apiService.callInternalApi(
-                transformationEndpoint,
-                ApiRequest.HttpMethod.POST,
-                payload,
-                transformationAuthScope,
-                transformationHeaders,
-                correlationId
-        );
+        try {
+            // Get Apigee token for transformation API
+            String token = apigeeTokenService.getToken(transformationAuthScope);
+            log.debug("[CORRELATION:{}] Using Apigee token for transformation", correlationId);
+            
+            String response = restClient.post()
+                    .uri(transformationEndpoint)
+                    .header("X-Correlation-ID", correlationId)
+                    .header("Authorization", "Bearer " + token)
+                    .header("X-Service-Type", "transformation")
+                    .header("X-Input-Format", "JSON")
+                    .header("X-Output-Format", "XML")
+                    .body(payload)
+                    .retrieve()
+                    .body(String.class);
+            
+            return CompletableFuture.completedFuture(
+                ApiResponse.success(response, transformationEndpoint, correlationId)
+            );
+            
+        } catch (Exception e) {
+            log.error("[CORRELATION:{}] JSON to XML transformation failed: {}", correlationId, e.getMessage());
+            return CompletableFuture.completedFuture(
+                ApiResponse.error(500, e.getMessage(), transformationEndpoint, correlationId)
+            );
+        }
     }
 }

@@ -54,6 +54,14 @@ This folder contains the essential documentation for the Banking Onboarding Serv
 - Docker and deployment ready
 - Test configuration setup
 
+### 🔐 [Token-Authentication-System.md](./Token-Authentication-System.md)
+**Authentication & Security**
+- Automatic token management for Apigee (internal) and Fenergo (external) APIs
+- Token caching and automatic refresh
+- Mock token fallback for development
+- Comprehensive security configuration
+- Production-ready authentication system
+
 ### 📊 [Comprehensive-Logging-System.md](./Comprehensive-Logging-System.md)
 **Logging & Monitoring**
 - Logback configuration with correlation ID tracking
@@ -92,9 +100,10 @@ This folder contains the essential documentation for the Banking Onboarding Serv
 4. **Detailed Tutorial**: [Generic-Step-Pattern-Tutorial.md](./Generic-Step-Pattern-Tutorial.md)
 
 ### For Operations & Monitoring
-1. **Logging Setup**: [Comprehensive-Logging-System.md](./Comprehensive-Logging-System.md)
-2. **Error Handling**: [Comprehensive-Exception-Handling-System.md](./Comprehensive-Exception-Handling-System.md)
-3. **Project Analysis**: [Project-Analysis-Report.md](./Project-Analysis-Report.md)
+1. **Authentication Setup**: [Token-Authentication-System.md](./Token-Authentication-System.md)
+2. **Logging Setup**: [Comprehensive-Logging-System.md](./Comprehensive-Logging-System.md)
+3. **Error Handling**: [Comprehensive-Exception-Handling-System.md](./Comprehensive-Exception-Handling-System.md)
+4. **Project Analysis**: [Project-Analysis-Report.md](./Project-Analysis-Report.md)
 
 ## 🔧 API Endpoints
 

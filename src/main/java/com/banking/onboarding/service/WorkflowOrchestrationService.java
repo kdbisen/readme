@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -19,7 +20,7 @@ public class WorkflowOrchestrationService {
     private final FenergoService fenergoService;
     
     /**
-     * Complete onboarding workflow: XML -> JSON (Apigee) -> Fenergo Entity Create (Proxy)
+     * Complete onboarding workflow: XML -> JSON (Apigee) -> Fenergo Entity Create
      */
     public CompletableFuture<ApiResponse> processOnboardingWorkflow(String xmlData, String correlationId) {
         log.info("[CORRELATION:{}] Starting complete onboarding workflow", correlationId);
@@ -34,14 +35,16 @@ public class WorkflowOrchestrationService {
                     
                     log.info("[CORRELATION:{}] XML to JSON transformation successful, proceeding to Fenergo", correlationId);
                     
-                    return fenergoService.createEntity(transformationResponse.getBody(), correlationId);
+                    // Convert response body to Map for entity creation
+                    Map<String, Object> entityData = Map.of("data", transformationResponse.getBody());
+                    return fenergoService.createEntity(entityData, correlationId);
                 });
     }
     
     /**
-     * Multi-step Fenergo workflow: Entity Create -> Journey Info -> Journey Initiate
+     * Multi-step Fenergo workflow: Entity Create -> Journey Schema Evaluation -> Journey Launch
      */
-    public CompletableFuture<ApiResponse> processFenergoWorkflow(Object initialData, String correlationId) {
+    public CompletableFuture<ApiResponse> processFenergoWorkflow(Map<String, Object> initialData, String correlationId) {
         log.info("[CORRELATION:{}] Starting multi-step Fenergo workflow", correlationId);
         
         return fenergoService.createEntity(initialData, correlationId)
@@ -52,25 +55,36 @@ public class WorkflowOrchestrationService {
                         return CompletableFuture.completedFuture(entityResponse);
                     }
                     
-                    log.info("[CORRELATION:{}] Entity created successfully, getting journey info", correlationId);
+                    log.info("[CORRELATION:{}] Entity created successfully, evaluating journey schema", correlationId);
                     
-                    return fenergoService.getJourneyInfo(entityResponse.getBody(), correlationId);
+                    // Create evaluation data
+                    Map<String, Object> evaluationData = Map.of(
+                        "entityId", "extracted-from-response", // This would be extracted from entityResponse
+                        "data", entityResponse.getBody()
+                    );
+                    return fenergoService.evaluateJourneySchema(evaluationData, correlationId);
                 })
-                .thenCompose(journeyInfoResponse -> {
-                    if (!journeyInfoResponse.isSuccess()) {
-                        log.error("[CORRELATION:{}] Journey info retrieval failed: {}", 
-                                correlationId, journeyInfoResponse.getErrorMessage());
-                        return CompletableFuture.completedFuture(journeyInfoResponse);
+                .thenCompose(evaluationResponse -> {
+                    if (!evaluationResponse.isSuccess()) {
+                        log.error("[CORRELATION:{}] Journey schema evaluation failed: {}", 
+                                correlationId, evaluationResponse.getErrorMessage());
+                        return CompletableFuture.completedFuture(evaluationResponse);
                     }
                     
-                    log.info("[CORRELATION:{}] Journey info retrieved successfully, initiating journey", correlationId);
+                    log.info("[CORRELATION:{}] Journey schema evaluated successfully, launching journey", correlationId);
                     
-                    return fenergoService.initiateJourney(journeyInfoResponse.getBody(), correlationId);
+                    // Create launch data
+                    Map<String, Object> launchData = Map.of(
+                        "entityId", "extracted-from-response",
+                        "journeySchemaId", "extracted-from-evaluation",
+                        "data", evaluationResponse.getBody()
+                    );
+                    return fenergoService.launchJourney(launchData, correlationId);
                 });
     }
     
     /**
-     * Complete end-to-end workflow: XML -> JSON -> Entity Create -> Journey Info -> Journey Initiate
+     * Complete end-to-end workflow: XML -> JSON -> Entity Create -> Journey Schema Evaluation -> Journey Launch
      */
     public CompletableFuture<ApiResponse> processCompleteWorkflow(String xmlData, String correlationId) {
         log.info("[CORRELATION:{}] Starting complete end-to-end workflow", correlationId);
@@ -81,21 +95,31 @@ public class WorkflowOrchestrationService {
                         return CompletableFuture.completedFuture(transformationResponse);
                     }
                     
-                    return fenergoService.createEntity(transformationResponse.getBody(), correlationId);
+                    Map<String, Object> entityData = Map.of("data", transformationResponse.getBody());
+                    return fenergoService.createEntity(entityData, correlationId);
                 })
                 .thenCompose(entityResponse -> {
                     if (!entityResponse.isSuccess()) {
                         return CompletableFuture.completedFuture(entityResponse);
                     }
                     
-                    return fenergoService.getJourneyInfo(entityResponse.getBody(), correlationId);
+                    Map<String, Object> evaluationData = Map.of(
+                        "entityId", "extracted-from-response",
+                        "data", entityResponse.getBody()
+                    );
+                    return fenergoService.evaluateJourneySchema(evaluationData, correlationId);
                 })
-                .thenCompose(journeyInfoResponse -> {
-                    if (!journeyInfoResponse.isSuccess()) {
-                        return CompletableFuture.completedFuture(journeyInfoResponse);
+                .thenCompose(evaluationResponse -> {
+                    if (!evaluationResponse.isSuccess()) {
+                        return CompletableFuture.completedFuture(evaluationResponse);
                     }
                     
-                    return fenergoService.initiateJourney(journeyInfoResponse.getBody(), correlationId);
+                    Map<String, Object> launchData = Map.of(
+                        "entityId", "extracted-from-response",
+                        "journeySchemaId", "extracted-from-evaluation",
+                        "data", evaluationResponse.getBody()
+                    );
+                    return fenergoService.launchJourney(launchData, correlationId);
                 });
     }
 }

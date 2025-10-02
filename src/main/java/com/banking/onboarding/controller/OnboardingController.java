@@ -1,21 +1,18 @@
 package com.banking.onboarding.controller;
 
-import com.banking.onboarding.domain.ApiRequest;
 import com.banking.onboarding.domain.ApiResponse;
-import com.banking.onboarding.domain.ApiType;
-import com.banking.onboarding.domain.AuthConfig;
+import com.banking.onboarding.exception.ProcessException;
+import com.banking.onboarding.exception.ValidationException;
 import com.banking.onboarding.model.OnboardingProcess;
-import com.banking.onboarding.service.ApiService;
 import com.banking.onboarding.service.CorrelationIdService;
+import com.banking.onboarding.service.GenericOnboardingFlowService;
+import com.banking.onboarding.service.MonitoringService;
 import com.banking.onboarding.service.TransformationService;
 import com.banking.onboarding.service.FenergoService;
 import com.banking.onboarding.service.WorkflowOrchestrationService;
-import com.banking.onboarding.service.GenericOnboardingFlowService;
 import com.banking.onboarding.service.ValidationService;
-import com.banking.onboarding.service.MonitoringService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,17 +29,13 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class OnboardingController {
 
-    private final ApiService apiService;
+    private final CorrelationIdService correlationIdService;
+    private final GenericOnboardingFlowService genericOnboardingFlowService;
+    private final MonitoringService monitoringService;
     private final TransformationService transformationService;
     private final FenergoService fenergoService;
     private final WorkflowOrchestrationService workflowOrchestrationService;
-    private final GenericOnboardingFlowService genericOnboardingFlowService;
     private final ValidationService validationService;
-    private final MonitoringService monitoringService;
-    private final CorrelationIdService correlationIdService;
-
-    @Value("${fenergo.proxy.url:http://fenergo-proxy.com/api/v1/proxy}")
-    private String fenergoProxyUrl;
 
     // ===========================================
     // MAIN ONBOARDING ENDPOINTS
@@ -103,7 +96,7 @@ public class OnboardingController {
         if (xmlData == null || xmlData.trim().isEmpty()) {
             return CompletableFuture.completedFuture(
                     ResponseEntity.badRequest().body(ApiResponse.error(
-                            400, "xmlData is required", "xml-to-json", ApiType.INTERNAL_APIGEE, actualCorrelationId
+                            400, "xmlData is required", "xml-to-json", actualCorrelationId
                     ))
             );
         }
@@ -123,7 +116,7 @@ public class OnboardingController {
      */
     @PostMapping("/fenergo/entity/create")
     public CompletableFuture<ResponseEntity<ApiResponse>> createFenergoEntity(
-            @RequestBody Object entityData,
+            @RequestBody Map<String, Object> entityData,
             @RequestHeader(value = "X-Correlation-ID", required = false) String correlationId) {
         
         String actualCorrelationId = correlationIdService.getOrGenerateCorrelationId(correlationId);
@@ -143,7 +136,7 @@ public class OnboardingController {
      */
     @PostMapping("/fenergo/workflow")
     public CompletableFuture<ResponseEntity<ApiResponse>> processFenergoWorkflow(
-            @RequestBody Object initialData,
+            @RequestBody Map<String, Object> initialData,
             @RequestHeader(value = "X-Correlation-ID", required = false) String correlationId) {
         
         String actualCorrelationId = correlationIdService.getOrGenerateCorrelationId(correlationId);
