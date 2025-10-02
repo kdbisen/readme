@@ -17,3 +17,4 @@ public class ValidationException extends BusinessException {
         super(message, "VALIDATION_ERROR", cause);
     }
 }
+

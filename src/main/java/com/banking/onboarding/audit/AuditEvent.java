@@ -62,3 +62,4 @@ public class AuditEvent {
         this.dateStr = timestamp != null ? timestamp.toLocalDate().toString() : null;
     }
 }
+

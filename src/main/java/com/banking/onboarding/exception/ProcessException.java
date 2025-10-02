@@ -17,3 +17,4 @@ public class ProcessException extends BusinessException {
         super(message, "PROCESS_ERROR", cause);
     }
 }
+

@@ -1,30 +1,23 @@
 package com.banking.onboarding.step.impl;
 
-import com.banking.onboarding.service.TransformationService;
 import com.banking.onboarding.step.GenericStepContext;
 import com.banking.onboarding.step.GenericStepExecutor;
 import com.banking.onboarding.step.StepConfig;
 import com.banking.onboarding.step.StepResult;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
- * Step 0: XML to JSON Transformation via Apigee (Internal API) - SYNCHRONOUS
- * Transforms XML input data to JSON format using internal Apigee service
+ * Step 0: XML to JSON Transformation - Mock Implementation
+ * Transforms XML input data to JSON format (simplified for demo)
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class XmlToJsonTransformationStep implements GenericStepExecutor {
-    
-    private final TransformationService transformationService;
     
     @Override
     public StepResult<Object> execute(GenericStepContext context) {
-        log.info("[CORRELATION:{}] Executing Step 0: XML to JSON transformation via Apigee", context.getCorrelationId());
+        log.info("[CORRELATION:{}] Executing Step 0: XML to JSON transformation", context.getCorrelationId());
         
         // Get input data - can be String or any other type
         Object inputData = getInputData(context);
@@ -35,24 +28,16 @@ public class XmlToJsonTransformationStep implements GenericStepExecutor {
         }
         
         try {
-            // Execute transformation synchronously by blocking on CompletableFuture
-            CompletableFuture<com.banking.onboarding.domain.ApiResponse> future = 
-                    transformationService.transformXmlToJson(xmlData, context.getCorrelationId());
+            // Mock transformation - convert XML to JSON-like structure
+            String jsonData = mockXmlToJsonTransformation(xmlData);
             
-            com.banking.onboarding.domain.ApiResponse response = future.get(); // Block here
+            // Store result in context for next steps
+            context.addStepResult(getStepName(), jsonData);
             
-            if (response.isSuccess()) {
-                // Store result in context for next steps
-                context.addStepResult(getStepName(), response.getBody());
-                
-                log.info("[CORRELATION:{}] Step 0 completed successfully. XML transformed to JSON: {} chars", 
-                        context.getCorrelationId(), 
-                        response.getBody() != null ? response.getBody().toString().length() : 0);
-                
-                return StepResult.success(response.getBody(), getStepName(), context.getCorrelationId());
-            } else {
-                return StepResult.failure(response.getErrorMessage(), getStepName(), context.getCorrelationId());
-            }
+            log.info("[CORRELATION:{}] Step 0 completed successfully. XML transformed to JSON: {} chars", 
+                    context.getCorrelationId(), jsonData.length());
+            
+            return StepResult.success(jsonData, getStepName(), context.getCorrelationId());
         } catch (Exception e) {
             log.error("[CORRELATION:{}] Step 0 failed: {}", context.getCorrelationId(), e.getMessage());
             return StepResult.failure("XML to JSON transformation failed: " + e.getMessage(), getStepName(), context.getCorrelationId());
@@ -63,7 +48,7 @@ public class XmlToJsonTransformationStep implements GenericStepExecutor {
     public StepConfig getConfig() {
         return StepConfig.builder()
                 .stepName(getStepName())
-                .description("Transform XML data to JSON format via internal Apigee service")
+                .description("Transform XML data to JSON format")
                 .retryEnabled(true)
                 .maxRetries(3)
                 .retryDelayMs(1000)
@@ -92,5 +77,23 @@ public class XmlToJsonTransformationStep implements GenericStepExecutor {
         if (inputData == null) return null;
         if (inputData instanceof String) return (String) inputData;
         return inputData.toString();
+    }
+    
+    /**
+     * Mock XML to JSON transformation
+     */
+    private String mockXmlToJsonTransformation(String xmlData) {
+        // Simple mock transformation for demo purposes
+        return String.format("""
+            {
+                "transformedFromXml": true,
+                "originalXmlLength": %d,
+                "transformationTimestamp": "%s",
+                "data": {
+                    "xmlContent": "%s",
+                    "status": "transformed"
+                }
+            }
+            """, xmlData.length(), java.time.Instant.now().toString(), xmlData.replace("\"", "\\\""));
     }
 }

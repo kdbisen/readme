@@ -146,3 +146,4 @@ public class FenergoJourneyLaunchStep implements GenericStepExecutor {
         return context.hasStepResult("FENERGO_JOURNEY_SCHEMA_EVALUATION");
     }
 }
+

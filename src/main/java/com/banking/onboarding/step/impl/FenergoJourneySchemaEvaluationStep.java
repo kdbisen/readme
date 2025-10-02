@@ -182,3 +182,4 @@ public class FenergoJourneySchemaEvaluationStep implements GenericStepExecutor {
         return context.hasStepResult("FENERGO_ENTITY_CREATION");
     }
 }
+

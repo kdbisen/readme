@@ -484,3 +484,4 @@ public class OnboardingServiceE2ETest {
         fail("Process did not complete within " + maxAttempts + " seconds");
     }
 }
+

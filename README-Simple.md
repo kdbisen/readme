@@ -84,3 +84,4 @@ curl http://localhost:8080/api/config/endpoints
 - **Works out of the box**
 
 **Need help?** Check the logs or the `/health` endpoint.
+

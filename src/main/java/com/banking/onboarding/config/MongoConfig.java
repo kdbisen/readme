@@ -16,3 +16,4 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
         return "banking_onboarding";
     }
 }
+

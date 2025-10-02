@@ -97,3 +97,4 @@ public class GenericStepPatternTest {
         assertNull(failureResult.getData());
     }
 }
+

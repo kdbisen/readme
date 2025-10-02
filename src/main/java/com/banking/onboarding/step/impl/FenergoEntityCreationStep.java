@@ -138,3 +138,4 @@ public class FenergoEntityCreationStep implements GenericStepExecutor {
         return context.hasStepResult("XML_TO_JSON_TRANSFORMATION") || context.getInputData() != null;
     }
 }
+

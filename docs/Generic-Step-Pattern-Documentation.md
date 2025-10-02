@@ -263,3 +263,4 @@ public void testXmlToJsonStep() {
 - **Debuggable**: Clear logging and error handling
 
 This generic step pattern provides a robust, flexible, and maintainable foundation for complex business processes while maintaining simplicity and ease of use.
+

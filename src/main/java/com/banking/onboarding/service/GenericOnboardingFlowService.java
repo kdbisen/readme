@@ -30,8 +30,6 @@ public class GenericOnboardingFlowService {
     private final OnboardingProcessRepository processRepository;
     private final CorrelationIdService correlationIdService;
     private final CorrelationIdStrategyService correlationIdStrategyService;
-    private final ValidationService validationService;
-    private final MonitoringService monitoringService;
     
     /**
      * Execute complete onboarding flow using generic step pattern - SYNCHRONOUS
@@ -57,24 +55,6 @@ public class GenericOnboardingFlowService {
         
         log.info("[CORRELATION:{}] Starting generic onboarding flow with processId: {} - Strategy: {}", 
                 actualCorrelationId, processId, strategyResult.getStrategy());
-        
-        // Validate input data
-        ValidationService.ValidationResult validation = validationService.validateProcessRequest(xmlData, requestType);
-        if (!validation.isValid()) {
-            log.error("[CORRELATION:{}] Validation failed: {}", actualCorrelationId, validation.getErrorMessage());
-            
-            OnboardingProcess failedProcess = createInitialProcess(processId, actualCorrelationId, requestType, xmlData);
-            failedProcess.setStatus(OnboardingProcess.ProcessStatus.FAILED);
-            failedProcess.setErrorMessage("Validation failed: " + validation.getErrorMessage());
-            failedProcess.setUpdatedAt(LocalDateTime.now());
-            
-            processRepository.save(failedProcess);
-            monitoringService.recordProcessCompletion(false);
-            
-            return failedProcess;
-        }
-        
-        log.info("[CORRELATION:{}] Validation passed. Warnings: {}", actualCorrelationId, validation.getWarningMessage());
         
         // Create initial process record
         OnboardingProcess process = createInitialProcess(processId, actualCorrelationId, requestType, xmlData);
@@ -194,7 +174,6 @@ public class GenericOnboardingFlowService {
         
         log.info("[CORRELATION:{}] Process {} completed successfully with {} steps", 
                 process.getCorrelationId(), process.getProcessId(), results.size());
-        monitoringService.recordProcessCompletion(true);
         
         return processRepository.save(process);
     }
@@ -209,7 +188,6 @@ public class GenericOnboardingFlowService {
         process.setUpdatedAt(LocalDateTime.now());
         
         log.error("[CORRELATION:{}] Process {} failed: {}", process.getCorrelationId(), process.getProcessId(), errorMessage);
-        monitoringService.recordProcessCompletion(false);
         
         return processRepository.save(process);
     }

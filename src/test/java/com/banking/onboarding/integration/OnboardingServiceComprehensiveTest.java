@@ -631,3 +631,4 @@ public class OnboardingServiceComprehensiveTest {
         verifyProcessCompletion(processId);
     }
 }
+
