@@ -38,13 +38,21 @@ This folder contains the essential documentation for the Banking Onboarding Serv
 - Testing commands with curl examples
 - Code templates for quick copy-paste
 
-### 🎯 [Consolidated-Step-Configuration-Guide.md](./Consolidated-Step-Configuration-Guide.md)
+### 🛠️ [Universal-Payload-Refinement-Utility.md](./Universal-Payload-Refinement-Utility.md)
+**Universal Utility Documentation**
+- Universal payload refinement utility for all steps
+- Automatic input source handling (previous step vs initial payload)
+- Pre-built transformers for common scenarios
+- Custom transformation capabilities
+- Rich metadata and debugging information
+
+### ⚙️ [Properties-Configuration-Guide.md](./Properties-Configuration-Guide.md)
 **Configuration Management**
-- Consolidated step configuration setup
-- All step info (name, priority, dependencies) in one place
-- Easy step modification examples
-- Step definition structure and best practices
-- Version control friendly configuration
+- Clean and minimal properties configuration
+- Environment variable overrides
+- Removed redundant configuration files
+- Docker and deployment ready
+- Test configuration setup
 
 ### 📊 [Comprehensive-Logging-System.md](./Comprehensive-Logging-System.md)
 **Logging & Monitoring**
@@ -79,8 +87,9 @@ This folder contains the essential documentation for the Banking Onboarding Serv
 
 ### For Step Management
 1. **Quick Reference**: [Step-Management-Quick-Reference.md](./Step-Management-Quick-Reference.md)
-2. **Configuration Guide**: [Consolidated-Step-Configuration-Guide.md](./Consolidated-Step-Configuration-Guide.md)
-3. **Detailed Tutorial**: [Generic-Step-Pattern-Tutorial.md](./Generic-Step-Pattern-Tutorial.md)
+2. **Universal Utility**: [Universal-Payload-Refinement-Utility.md](./Universal-Payload-Refinement-Utility.md)
+3. **Configuration Guide**: [Properties-Configuration-Guide.md](./Properties-Configuration-Guide.md)
+4. **Detailed Tutorial**: [Generic-Step-Pattern-Tutorial.md](./Generic-Step-Pattern-Tutorial.md)
 
 ### For Operations & Monitoring
 1. **Logging Setup**: [Comprehensive-Logging-System.md](./Comprehensive-Logging-System.md)
@@ -96,7 +105,7 @@ This folder contains the essential documentation for the Banking Onboarding Serv
 
 ## ⚙️ Configuration
 
-All configuration is done via `application.properties` and environment variables. See the main documentation for details.
+All configuration is done via `application.properties` and environment variables. See [Properties-Configuration-Guide.md](./Properties-Configuration-Guide.md) for details.
 
 ## 🎯 Current Step Flow
 
