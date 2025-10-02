@@ -2,7 +2,7 @@
 
 This folder contains the essential documentation for the Banking Onboarding Service.
 
-## 📚 Current Documentation
+## 📚 Essential Documentation
 
 ### 🚀 [Complete-Fenergo-Integration-Flow.md](./Complete-Fenergo-Integration-Flow.md)
 **Main Implementation Guide**
@@ -70,21 +70,29 @@ This folder contains the essential documentation for the Banking Onboarding Serv
 - Kibana integration for log analysis
 - Performance monitoring and metrics
 
-### 🚨 [Comprehensive-Exception-Handling-System.md](./Comprehensive-Exception-Handling-System.md)
-**Exception Handling**
+### 🔄 [Correlation-ID-Strategy-Fixed.md](./Correlation-ID-Strategy-Fixed.md)
+**Correlation ID Management**
+- Proper duplicate correlation ID handling
+- Smart retry and concurrent process strategies
+- Critical operation protection
+- Complete process traceability
+- Business logic compliance
+
+### 📈 [Complete-Payload-Storage-No-Truncation.md](./Complete-Payload-Storage-No-Truncation.md)
+**Complete Data Storage**
+- Complete payload and response storage without truncation
+- Multiple storage formats (object, string, bytes)
+- Accurate size tracking and data preservation
+- Enhanced debugging and audit capabilities
+- Production-ready data management
+
+### 🚨 [Comprehensive-Error-Audit-Logging.md](./Comprehensive-Error-Audit-Logging.md)
+**Error Handling & Audit**
 - Global exception handling with detailed error responses
 - Business-specific exception types
+- Comprehensive error audit logging
 - Correlation ID and trace ID tracking
-- Helpful error suggestions and metadata
 - Production-ready error management
-
-### 📈 [Project-Analysis-Report.md](./Project-Analysis-Report.md)
-**Project Overview**
-- Current implementation analysis
-- Strengths and weaknesses assessment
-- Future enhancement recommendations
-- Technical debt analysis
-- Performance considerations
 
 ## 🎯 Quick Start Guide
 
@@ -102,8 +110,9 @@ This folder contains the essential documentation for the Banking Onboarding Serv
 ### For Operations & Monitoring
 1. **Authentication Setup**: [Token-Authentication-System.md](./Token-Authentication-System.md)
 2. **Logging Setup**: [Comprehensive-Logging-System.md](./Comprehensive-Logging-System.md)
-3. **Error Handling**: [Comprehensive-Exception-Handling-System.md](./Comprehensive-Exception-Handling-System.md)
-4. **Project Analysis**: [Project-Analysis-Report.md](./Project-Analysis-Report.md)
+3. **Error Handling**: [Comprehensive-Error-Audit-Logging.md](./Comprehensive-Error-Audit-Logging.md)
+4. **Correlation ID Management**: [Correlation-ID-Strategy-Fixed.md](./Correlation-ID-Strategy-Fixed.md)
+5. **Data Storage**: [Complete-Payload-Storage-No-Truncation.md](./Complete-Payload-Storage-No-Truncation.md)
 
 ## 🔧 API Endpoints
 

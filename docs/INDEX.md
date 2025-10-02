@@ -6,13 +6,16 @@
 
 ## 🔧 Step Management
 - **[Step-Management-Quick-Reference.md](./Step-Management-Quick-Reference.md)** - Quick reference guide
-- **[Consolidated-Step-Configuration-Guide.md](./Consolidated-Step-Configuration-Guide.md)** - Configuration management
+- **[Properties-Configuration-Guide.md](./Properties-Configuration-Guide.md)** - Configuration management
 - **[Generic-Step-Pattern-Tutorial.md](./Generic-Step-Pattern-Tutorial.md)** - Detailed tutorial
+- **[Universal-Payload-Refinement-Utility.md](./Universal-Payload-Refinement-Utility.md)** - Universal utility
 
 ## 🛠️ Operations & Monitoring
 - **[Comprehensive-Logging-System.md](./Comprehensive-Logging-System.md)** - Logging setup
-- **[Comprehensive-Exception-Handling-System.md](./Comprehensive-Exception-Handling-System.md)** - Error handling
-- **[Project-Analysis-Report.md](./Project-Analysis-Report.md)** - Project overview
+- **[Comprehensive-Error-Audit-Logging.md](./Comprehensive-Error-Audit-Logging.md)** - Error handling & audit
+- **[Correlation-ID-Strategy-Fixed.md](./Correlation-ID-Strategy-Fixed.md)** - Correlation ID management
+- **[Complete-Payload-Storage-No-Truncation.md](./Complete-Payload-Storage-No-Truncation.md)** - Data storage
+- **[Token-Authentication-System.md](./Token-Authentication-System.md)** - Authentication & security
 
 ## 📋 Quick Links
 - **API Endpoints**: `POST /api/v1/onboarding/process-entity`
