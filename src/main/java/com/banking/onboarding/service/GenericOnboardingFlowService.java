@@ -29,18 +29,34 @@ public class GenericOnboardingFlowService {
     private final StepConfigurationLoader stepConfigurationLoader;
     private final OnboardingProcessRepository processRepository;
     private final CorrelationIdService correlationIdService;
+    private final CorrelationIdStrategyService correlationIdStrategyService;
     private final ValidationService validationService;
     private final MonitoringService monitoringService;
     
     /**
      * Execute complete onboarding flow using generic step pattern - SYNCHRONOUS
+     * Now includes correlation ID strategy handling
      */
     public OnboardingProcess executeCompleteFlow(String xmlData, String requestType, String correlationId) {
         String actualCorrelationId = correlationIdService.getOrGenerateCorrelationId(correlationId);
+        
+        // Handle correlation ID strategy
+        CorrelationIdStrategyService.CorrelationIdStrategyResult strategyResult = 
+            correlationIdStrategyService.handleCorrelationIdStrategy(actualCorrelationId, requestType);
+        
+        if (!strategyResult.isShouldProceed()) {
+            log.warn("[CORRELATION:{}] Request rejected due to correlation ID strategy: {}", 
+                    actualCorrelationId, strategyResult.getMessage());
+            
+            // Return the latest existing process or create a rejected process
+            return strategyResult.getLatestProcess()
+                    .orElse(createRejectedProcess(actualCorrelationId, requestType, strategyResult.getMessage()));
+        }
+        
         String processId = "PROC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         
-        log.info("[CORRELATION:{}] Starting generic onboarding flow with processId: {}", 
-                actualCorrelationId, processId);
+        log.info("[CORRELATION:{}] Starting generic onboarding flow with processId: {} - Strategy: {}", 
+                actualCorrelationId, processId, strategyResult.getStrategy());
         
         // Validate input data
         ValidationService.ValidationResult validation = validationService.validateProcessRequest(xmlData, requestType);
@@ -194,6 +210,27 @@ public class GenericOnboardingFlowService {
         
         log.error("[CORRELATION:{}] Process {} failed: {}", process.getCorrelationId(), process.getProcessId(), errorMessage);
         monitoringService.recordProcessCompletion(false);
+        
+        return processRepository.save(process);
+    }
+    
+    /**
+     * Create rejected process record
+     */
+    private OnboardingProcess createRejectedProcess(String correlationId, String requestType, String reason) {
+        String processId = "PROC-REJECTED-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        
+        OnboardingProcess process = new OnboardingProcess();
+        process.setProcessId(processId);
+        process.setCorrelationId(correlationId);
+        process.setRequestType(requestType);
+        process.setInputData("Request rejected due to correlation ID strategy");
+        process.setStatus(OnboardingProcess.ProcessStatus.CANCELLED);
+        process.setErrorMessage("Request rejected: " + reason);
+        process.setCreatedAt(LocalDateTime.now());
+        process.setUpdatedAt(LocalDateTime.now());
+        process.setCompletedAt(LocalDateTime.now());
+        process.setSteps(new java.util.ArrayList<>());
         
         return processRepository.save(process);
     }

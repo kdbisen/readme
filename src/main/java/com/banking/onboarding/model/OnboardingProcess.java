@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Onboarding Process Model
@@ -24,7 +25,7 @@ public class OnboardingProcess {
     @Id
     private String id;
     
-    @Indexed
+    @Indexed(unique = true)
     private String processId;
     
     @Indexed
@@ -40,6 +41,14 @@ public class OnboardingProcess {
     private LocalDateTime completedAt;
     
     private List<ProcessStep> steps;
+    
+    // Enhanced payload and response tracking
+    private Map<String, Object> stepPayloadResponses;
+    private Map<String, Object> executionTrace;
+    private long totalExecutionTimeMs;
+    private int totalStepsExecuted;
+    private int successfulSteps;
+    private int failedSteps;
     
     public enum ProcessStatus {
         PENDING,

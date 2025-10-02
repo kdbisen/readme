@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * Process Step Model
@@ -25,6 +26,23 @@ public class ProcessStep {
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
     private long durationMs;
+    
+    // Enhanced payload and response tracking - COMPLETE DATA AS-IS
+    private String inputPayloadType;      // XML, JSON, etc.
+    private String outputResponseType;    // JSON, XML, etc.
+    private long inputPayloadSize;        // Size in bytes - ACCURATE SIZE
+    private long outputResponseSize;      // Size in bytes - ACCURATE SIZE
+    private Map<String, Object> additionalContext; // Additional step context
+    private String stackTrace;            // Stack trace if failed
+    private String exceptionClass;        // Exception class if failed
+    
+    // Complete payload storage - NO TRUNCATION
+    private Object inputPayloadComplete;     // COMPLETE INPUT - NO TRUNCATION
+    private Object outputResponseComplete;   // COMPLETE OUTPUT - NO TRUNCATION
+    private String inputPayloadRawString;    // Raw string - complete, untruncated
+    private String outputResponseRawString;  // Raw string - complete, untruncated
+    private byte[] inputPayloadRawBytes;     // Raw bytes for binary data
+    private byte[] outputResponseRawBytes;   // Raw bytes for binary data
     
     public enum StepStatus {
         PENDING,

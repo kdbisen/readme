@@ -1,5 +1,6 @@
 package com.banking.onboarding.exception;
 
+import com.banking.onboarding.audit.AuditService;
 import com.banking.onboarding.service.CorrelationIdService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ import java.util.UUID;
 public class GlobalExceptionHandler {
 
     private final CorrelationIdService correlationIdService;
+    private final AuditService auditService;
 
     // ===========================================
     // BUSINESS EXCEPTIONS
@@ -45,6 +47,21 @@ public class GlobalExceptionHandler {
                 ex.getCorrelationId() : correlationIdService.getOrGenerateCorrelationId(null);
         
         log.error("[CORRELATION:{}] Business error [{}]: {}", correlationId, ex.getErrorCode(), ex.getMessage());
+        
+        // Log to audit service
+        auditService.logError(
+            null, // processId - will be extracted from context if available
+            correlationId,
+            "BUSINESS_ERROR",
+            ex.getMessage(),
+            getStackTrace(ex),
+            Map.of(
+                "errorCode", ex.getErrorCode(),
+                "requestUri", getPath(request),
+                "method", getMethod(request),
+                "userAgent", request.getHeader("User-Agent")
+            )
+        );
         
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .error("BUSINESS_ERROR")
@@ -527,5 +544,15 @@ public class GlobalExceptionHandler {
             case "STEP_EXECUTION_ERROR" -> "Step execution failed. Please check the process status and retry if necessary.";
             default -> "Please check your request and try again.";
         };
+    }
+    
+    /**
+     * Get stack trace as string
+     */
+    private String getStackTrace(Exception exception) {
+        java.io.StringWriter sw = new java.io.StringWriter();
+        java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+        exception.printStackTrace(pw);
+        return sw.toString();
     }
 }

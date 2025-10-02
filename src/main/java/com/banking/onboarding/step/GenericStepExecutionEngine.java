@@ -1,5 +1,6 @@
 package com.banking.onboarding.step;
 
+import com.banking.onboarding.util.CompletePayloadStorageUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GenericStepExecutionEngine {
     
     private final Map<String, GenericStepExecutor> stepExecutors = new ConcurrentHashMap<>();
+    private final CompletePayloadStorageUtil payloadStorageUtil;
     
     /**
      * Register a step executor
@@ -92,10 +94,19 @@ public class GenericStepExecutionEngine {
     }
     
     /**
-     * Execute step once - SYNCHRONOUS
+     * Execute step once - SYNCHRONOUS with payload/response tracking
      */
     private StepResult<Object> executeOnce(GenericStepExecutor executor, GenericStepContext context) {
         long startTime = System.currentTimeMillis();
+        String stepName = executor.getStepName();
+        
+        // Capture input payload - COMPLETE, NO TRUNCATION
+        Object inputPayload = executor.getInputData(context);
+        String inputPayloadType = determinePayloadType(inputPayload);
+        
+        // Store complete input payload data
+        CompletePayloadStorageUtil.CompletePayloadData inputPayloadData = 
+            payloadStorageUtil.storeCompletePayload(inputPayload, inputPayloadType);
         
         try {
             StepResult<Object> result = executor.execute(context);
@@ -104,15 +115,80 @@ public class GenericStepExecutionEngine {
             result.setDurationMs(duration);
             result.setCompletedAt(LocalDateTime.now());
             
-            log.info("[CORRELATION:{}] Step {} completed in {}ms", 
-                    context.getCorrelationId(), executor.getStepName(), duration);
+            // Store complete output response data
+            CompletePayloadStorageUtil.CompletePayloadData outputPayloadData = 
+                payloadStorageUtil.storeCompletePayload(result.getData(), determinePayloadType(result.getData()));
+            
+            // Store successful payload and response - COMPLETE DATA AS-IS
+            if (result.isSuccess()) {
+                context.storeSuccessfulStepPayloadResponse(
+                    stepName,
+                    inputPayloadData.getOriginalPayload(),      // COMPLETE INPUT
+                    outputPayloadData.getOriginalPayload(),    // COMPLETE OUTPUT
+                    inputPayloadType,
+                    determinePayloadType(result.getData()),
+                    duration,
+                    Map.of(
+                        "stepConfig", executor.getConfig(),
+                        "executionTime", duration,
+                        "correlationId", context.getCorrelationId(),
+                        "inputPayloadSize", inputPayloadData.getAccuratePayloadSize(),
+                        "outputPayloadSize", outputPayloadData.getAccuratePayloadSize(),
+                        "inputPayloadComplete", inputPayloadData.getPayloadAsCompleteString(),
+                        "outputPayloadComplete", outputPayloadData.getPayloadAsCompleteString()
+                    )
+                );
+            } else {
+                // Store failed payload and response - COMPLETE DATA AS-IS
+                context.storeFailedStepPayloadResponse(
+                    stepName,
+                    inputPayloadData.getOriginalPayload(),      // COMPLETE INPUT
+                    outputPayloadData.getOriginalPayload(),     // COMPLETE OUTPUT
+                    inputPayloadType,
+                    determinePayloadType(result.getData()),
+                    duration,
+                    result.getErrorMessage(),
+                    Map.of(
+                        "stepConfig", executor.getConfig(),
+                        "executionTime", duration,
+                        "correlationId", context.getCorrelationId(),
+                        "errorType", "STEP_EXECUTION_ERROR",
+                        "inputPayloadSize", inputPayloadData.getAccuratePayloadSize(),
+                        "outputPayloadSize", outputPayloadData.getAccuratePayloadSize(),
+                        "inputPayloadComplete", inputPayloadData.getPayloadAsCompleteString(),
+                        "outputPayloadComplete", outputPayloadData.getPayloadAsCompleteString()
+                    )
+                );
+            }
+            
+            log.info("[CORRELATION:{}] Step {} completed in {}ms. Input: {} bytes, Output: {} bytes", 
+                    context.getCorrelationId(), stepName, duration,
+                    getPayloadSize(inputPayload), getPayloadSize(result.getData()));
             
             return result;
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
             
+            // Store failed payload and response with exception
+            context.storeFailedStepPayloadResponse(
+                stepName,
+                inputPayload,
+                null, // No output response due to exception
+                inputPayloadType,
+                null, // No output type due to exception
+                duration,
+                e.getMessage(),
+                Map.of(
+                    "stepConfig", executor.getConfig(),
+                    "executionTime", duration,
+                    "correlationId", context.getCorrelationId(),
+                    "exceptionClass", e.getClass().getSimpleName(),
+                    "stackTrace", getStackTrace(e)
+                )
+            );
+            
             log.error("[CORRELATION:{}] Step {} failed after {}ms: {}", 
-                    context.getCorrelationId(), executor.getStepName(), duration, e.getMessage());
+                    context.getCorrelationId(), stepName, duration, e.getMessage());
             
             StepResult<Object> failureResult = executor.handleFailure(context, e);
             failureResult.setDurationMs(duration);
@@ -120,6 +196,53 @@ public class GenericStepExecutionEngine {
             
             return failureResult;
         }
+    }
+    
+    /**
+     * Determine payload type based on content
+     */
+    private String determinePayloadType(Object payload) {
+        if (payload == null) return "NULL";
+        
+        String payloadStr = payload.toString().trim();
+        if (payloadStr.startsWith("{") && payloadStr.endsWith("}")) {
+            return "JSON";
+        } else if (payloadStr.startsWith("<") && payloadStr.endsWith(">")) {
+            return "XML";
+        } else if (payloadStr.startsWith("[") && payloadStr.endsWith("]")) {
+            return "JSON_ARRAY";
+        } else if (payload instanceof Map) {
+            return "MAP";
+        } else if (payload instanceof String) {
+            return "STRING";
+        } else {
+            return payload.getClass().getSimpleName().toUpperCase();
+        }
+    }
+    
+    /**
+     * Get payload size - ACCURATE SIZE, NO TRUNCATION
+     */
+    private long getPayloadSize(Object payload) {
+        if (payload == null) return 0;
+        
+        if (payload instanceof String) {
+            return ((String) payload).length();
+        } else if (payload instanceof byte[]) {
+            return ((byte[]) payload).length;
+        } else {
+            return payload.toString().length();
+        }
+    }
+    
+    /**
+     * Get stack trace as string
+     */
+    private String getStackTrace(Exception exception) {
+        java.io.StringWriter sw = new java.io.StringWriter();
+        java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+        exception.printStackTrace(pw);
+        return sw.toString();
     }
     
     /**
