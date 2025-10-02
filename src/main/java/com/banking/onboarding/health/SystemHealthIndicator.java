@@ -1,6 +1,5 @@
 package com.banking.onboarding.health;
 
-import com.banking.onboarding.circuitbreaker.CircuitBreaker;
 import com.banking.onboarding.service.MonitoringService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +22,6 @@ public class SystemHealthIndicator {
     
     private final MongoTemplate mongoTemplate;
     private final RestClient restClient;
-    private final CircuitBreaker circuitBreaker;
     private final MonitoringService monitoringService;
     
     /**
@@ -46,10 +44,6 @@ public class SystemHealthIndicator {
         HealthStatus fenergoHealth = checkFenergoHealth();
         health.put("fenergo", fenergoHealth);
         if (!fenergoHealth.isHealthy()) isHealthy = false;
-        
-        // Check circuit breaker states
-        Map<String, Object> circuitBreakerStates = checkCircuitBreakerStates();
-        health.put("circuitBreakers", circuitBreakerStates);
         
         // Check system metrics
         Map<String, Object> systemMetrics = getSystemMetrics();
@@ -79,13 +73,6 @@ public class SystemHealthIndicator {
     
     private HealthStatus checkApigeeHealth() {
         try {
-            // Check circuit breaker state
-            CircuitBreaker.State state = circuitBreaker.getCircuitState("apigee");
-            if (state == CircuitBreaker.State.OPEN) {
-                return new HealthStatus("DOWN", "Apigee circuit breaker is OPEN", 
-                    "Too many failures detected");
-            }
-            
             // Try a simple health check call (if endpoint exists)
             // This would be a lightweight health check endpoint
             return new HealthStatus("UP", "Apigee service accessible", null);
@@ -97,43 +84,13 @@ public class SystemHealthIndicator {
     
     private HealthStatus checkFenergoHealth() {
         try {
-            // Check circuit breaker state
-            CircuitBreaker.State state = circuitBreaker.getCircuitState("fenergo");
-            if (state == CircuitBreaker.State.OPEN) {
-                return new HealthStatus("DOWN", "Fenergo circuit breaker is OPEN", 
-                    "Too many failures detected");
-            }
-            
             // Try a simple health check call (if endpoint exists)
+            // This would be a lightweight health check endpoint
             return new HealthStatus("UP", "Fenergo service accessible", null);
         } catch (Exception e) {
             log.error("Fenergo health check failed", e);
             return new HealthStatus("DOWN", "Fenergo service unavailable", e.getMessage());
         }
-    }
-    
-    private Map<String, Object> checkCircuitBreakerStates() {
-        Map<String, Object> states = new HashMap<>();
-        
-        // Check Apigee circuit breaker
-        CircuitBreaker.CircuitBreakerMetrics apigeeMetrics = circuitBreaker.getMetrics("apigee");
-        states.put("apigee", Map.of(
-            "state", apigeeMetrics.getState().toString(),
-            "successRate", apigeeMetrics.getSuccessRate(),
-            "failureRate", apigeeMetrics.getFailureRate(),
-            "totalRequests", apigeeMetrics.getTotalRequests()
-        ));
-        
-        // Check Fenergo circuit breaker
-        CircuitBreaker.CircuitBreakerMetrics fenergoMetrics = circuitBreaker.getMetrics("fenergo");
-        states.put("fenergo", Map.of(
-            "state", fenergoMetrics.getState().toString(),
-            "successRate", fenergoMetrics.getSuccessRate(),
-            "failureRate", fenergoMetrics.getFailureRate(),
-            "totalRequests", fenergoMetrics.getTotalRequests()
-        ));
-        
-        return states;
     }
     
     private Map<String, Object> getSystemMetrics() {
@@ -150,42 +107,37 @@ public class SystemHealthIndicator {
         
         // Get step metrics
         Map<String, MonitoringService.StepMetrics> stepMetrics = monitoringService.getAllStepMetrics();
-        Map<String, Object> stepMetricsMap = new HashMap<>();
-        stepMetrics.forEach((stepName, stepMetric) -> {
-            stepMetricsMap.put(stepName, Map.of(
-                "executionCount", stepMetric.getExecutionCount(),
-                "averageDuration", stepMetric.getAverageDurationMs(),
-                "errorRate", stepMetric.getErrorRate()
-            ));
-        });
-        metrics.put("steps", stepMetricsMap);
+        metrics.put("steps", stepMetrics);
         
         return metrics;
     }
     
     private HealthStatus checkMemoryHealth() {
-        Runtime runtime = Runtime.getRuntime();
-        long maxMemory = runtime.maxMemory();
-        long totalMemory = runtime.totalMemory();
-        long freeMemory = runtime.freeMemory();
-        long usedMemory = totalMemory - freeMemory;
-        
-        double memoryUsagePercent = (double) usedMemory / maxMemory * 100;
-        
-        if (memoryUsagePercent > 90) {
-            return new HealthStatus("DOWN", "High memory usage", 
-                String.format("Memory usage: %.2f%%", memoryUsagePercent));
-        } else if (memoryUsagePercent > 80) {
-            return new HealthStatus("WARN", "Moderate memory usage", 
-                String.format("Memory usage: %.2f%%", memoryUsagePercent));
-        } else {
-            return new HealthStatus("UP", "Memory usage normal", 
-                String.format("Memory usage: %.2f%%", memoryUsagePercent));
+        try {
+            Runtime runtime = Runtime.getRuntime();
+            long totalMemory = runtime.totalMemory();
+            long freeMemory = runtime.freeMemory();
+            long usedMemory = totalMemory - freeMemory;
+            double memoryUsagePercent = (double) usedMemory / totalMemory * 100;
+            
+            if (memoryUsagePercent > 90) {
+                return new HealthStatus("DOWN", "High memory usage", 
+                    String.format("Memory usage: %.2f%%", memoryUsagePercent));
+            } else if (memoryUsagePercent > 80) {
+                return new HealthStatus("WARNING", "Moderate memory usage", 
+                    String.format("Memory usage: %.2f%%", memoryUsagePercent));
+            } else {
+                return new HealthStatus("UP", "Memory usage normal", 
+                    String.format("Memory usage: %.2f%%", memoryUsagePercent));
+            }
+        } catch (Exception e) {
+            log.error("Memory health check failed", e);
+            return new HealthStatus("DOWN", "Memory check failed", e.getMessage());
         }
     }
     
     /**
-     * Health status class
+     * Health status representation
      */
     public static class HealthStatus {
         private final String status;
@@ -198,12 +150,22 @@ public class SystemHealthIndicator {
             this.details = details;
         }
         
+        public String getStatus() { return status; }
+        public String getMessage() { return message; }
+        public String getDetails() { return details; }
+        
         public boolean isHealthy() {
             return "UP".equals(status);
         }
         
-        public String getStatus() { return status; }
-        public String getMessage() { return message; }
-        public String getDetails() { return details; }
+        public Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<>();
+            map.put("status", status);
+            map.put("message", message);
+            if (details != null) {
+                map.put("details", details);
+            }
+            return map;
+        }
     }
 }

@@ -1,9 +1,7 @@
 package com.banking.onboarding.service;
 
 import com.banking.onboarding.auth.ApigeeTokenService;
-import com.banking.onboarding.circuitbreaker.CircuitBreaker;
 import com.banking.onboarding.domain.ApiResponse;
-import com.banking.onboarding.retry.RetryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,8 +21,6 @@ public class TransformationService {
     
     private final RestClient restClient;
     private final ApigeeTokenService apigeeTokenService;
-    private final CircuitBreaker circuitBreaker;
-    private final RetryService retryService;
     
     @Value("${apigee.transformation.endpoint:https://apigee-transformation-service.com/api/v1/transform}")
     private String transformationEndpoint;
@@ -41,25 +37,20 @@ public class TransformationService {
         Map<String, Object> payload = Map.of("inputData", xmlData);
         
         try {
-            // Use circuit breaker and retry for resilient API calls
-            String response = circuitBreaker.execute("apigee", () -> 
-                retryService.executeWithRetry(() -> {
-                    // Get Apigee token for transformation API
-                    String token = apigeeTokenService.getToken(transformationAuthScope);
-                    log.debug("[CORRELATION:{}] Using Apigee token for transformation", correlationId);
-                    
-                    return restClient.post()
-                            .uri(transformationEndpoint)
-                            .header("X-Correlation-ID", correlationId)
-                            .header("Authorization", "Bearer " + token)
-                            .header("X-Service-Type", "transformation")
-                            .header("X-Input-Format", "XML")
-                            .header("X-Output-Format", "JSON")
-                            .body(payload)
-                            .retrieve()
-                            .body(String.class);
-                }, "Apigee XML to JSON transformation")
-            );
+            // Get Apigee token for transformation API
+            String token = apigeeTokenService.getToken(transformationAuthScope);
+            log.debug("[CORRELATION:{}] Using Apigee token for transformation", correlationId);
+            
+            String response = restClient.post()
+                    .uri(transformationEndpoint)
+                    .header("X-Correlation-ID", correlationId)
+                    .header("Authorization", "Bearer " + token)
+                    .header("X-Service-Type", "transformation")
+                    .header("X-Input-Format", "XML")
+                    .header("X-Output-Format", "JSON")
+                    .body(payload)
+                    .retrieve()
+                    .body(String.class);
             
             return CompletableFuture.completedFuture(
                 ApiResponse.success(response, transformationEndpoint, correlationId)

@@ -327,23 +327,22 @@ public class AuditService {
     }
     
     /**
-     * Log circuit breaker error event
+     * Log system error event
      */
-    public void logCircuitBreakerError(String serviceName, String operation, String errorMessage, 
-                                      int failureCount, String circuitState) {
+    public void logSystemError(String component, String operation, String errorMessage, 
+                              String errorCode, String severity) {
         AuditEvent event = AuditEvent.builder()
                 .eventId(generateEventId())
                 .eventType(AuditEventType.ERROR_EVENT)
                 .timestamp(LocalDateTime.now())
                 .success(false)
                 .details(Map.of(
-                    "errorType", "CIRCUIT_BREAKER_ERROR",
-                    "serviceName", serviceName != null ? serviceName : "unknown",
+                    "errorType", "SYSTEM_ERROR",
+                    "component", component != null ? component : "unknown",
                     "operation", operation != null ? operation : "unknown",
-                    "errorMessage", errorMessage != null ? errorMessage : "Circuit breaker triggered",
-                    "failureCount", failureCount,
-                    "circuitState", circuitState != null ? circuitState : "unknown",
-                    "severity", "HIGH"
+                    "errorMessage", errorMessage != null ? errorMessage : "System error occurred",
+                    "errorCode", errorCode != null ? errorCode : "UNKNOWN",
+                    "severity", severity != null ? severity : "MEDIUM"
                 ))
                 .build();
         
@@ -351,22 +350,21 @@ public class AuditService {
     }
     
     /**
-     * Log retry failure error event
+     * Log operation failure error event
      */
-    public void logRetryFailure(String operation, int attemptCount, int maxAttempts, 
-                               String finalErrorMessage, long totalDurationMs) {
+    public void logOperationFailure(String operation, String errorMessage, 
+                                   String errorCode, long durationMs) {
         AuditEvent event = AuditEvent.builder()
                 .eventId(generateEventId())
                 .eventType(AuditEventType.ERROR_EVENT)
                 .timestamp(LocalDateTime.now())
                 .success(false)
-                .durationMs(totalDurationMs)
+                .durationMs(durationMs)
                 .details(Map.of(
-                    "errorType", "RETRY_FAILURE",
+                    "errorType", "OPERATION_FAILURE",
                     "operation", operation != null ? operation : "unknown",
-                    "attemptCount", attemptCount,
-                    "maxAttempts", maxAttempts,
-                    "finalErrorMessage", finalErrorMessage != null ? finalErrorMessage : "All retry attempts failed",
+                    "errorMessage", errorMessage != null ? errorMessage : "Operation failed",
+                    "errorCode", errorCode != null ? errorCode : "UNKNOWN",
                     "severity", "HIGH"
                 ))
                 .build();

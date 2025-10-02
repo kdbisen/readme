@@ -249,8 +249,6 @@ public class OnboardingController {
                 "version", "1.0.0",
                 "description", "Spring Boot service for banking onboarding with Fenergo integration",
                 "features", Map.of(
-                        "circuit-breaker", "Enabled",
-                        "retry-mechanism", "Enabled",
                         "rate-limiting", "Enabled",
                         "audit-logging", "Enabled",
                         "monitoring", "Enabled"
