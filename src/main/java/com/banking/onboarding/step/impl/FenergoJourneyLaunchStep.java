@@ -1,9 +1,12 @@
 package com.banking.onboarding.step.impl;
 
+import com.banking.onboarding.constants.OnboardingConstants;
 import com.banking.onboarding.step.GenericStepContext;
 import com.banking.onboarding.step.GenericStepExecutor;
 import com.banking.onboarding.step.StepConfig;
 import com.banking.onboarding.step.StepResult;
+import com.banking.onboarding.step.enhancer.StepContextEnhancer;
+import com.banking.onboarding.step.util.DynamicStepLoggingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,8 +17,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Step 3: Launch Journey via Fenergo Journey Command API - SYNCHRONOUS
+ * Fenergo Journey Launch Step - Dynamic Step Numbering
  * Launches the journey using Direct Launch approach for simplicity
+ * Uses dynamic step numbering instead of hardcoded step numbers
  */
 @Slf4j
 @Component
@@ -23,6 +27,8 @@ import java.util.concurrent.CompletableFuture;
 public class FenergoJourneyLaunchStep implements GenericStepExecutor {
     
     private final RestClient restClient;
+    private final DynamicStepLoggingUtil stepLoggingUtil;
+    private final StepContextEnhancer stepContextEnhancer;
     
     @Value("${fenergo.journey.command.url:https://fenergo.example.com/api/journey-instance/launch-journey}")
     private String journeyCommandUrl;
@@ -32,12 +38,18 @@ public class FenergoJourneyLaunchStep implements GenericStepExecutor {
     
     @Override
     public StepResult<Object> execute(GenericStepContext context) {
-        log.info("[CORRELATION:{}] Executing Step 3: Launch Journey via Journey Command API", context.getCorrelationId());
+        // Enhance context with dynamic step numbering
+        StepContextEnhancer.EnhancedStepContext enhancedContext = 
+            stepContextEnhancer.enhanceContext(context, getStepName());
+        
+        // Log step start with dynamic step number
+        stepLoggingUtil.logStepStart(enhancedContext, "Launch Journey via Journey Command API");
         
         // Get schema information from previous step
-        Map<String, Object> schemaInfo = context.getStepResult("FENERGO_JOURNEY_SCHEMA_EVALUATION", Map.class);
+        Map<String, Object> schemaInfo = context.getStepResult(OnboardingConstants.StepNames.FENERGO_JOURNEY_SCHEMA_EVALUATION, Map.class);
         if (schemaInfo == null) {
-            return StepResult.failure("No schema information available from previous step", getStepName(), context.getCorrelationId());
+            stepLoggingUtil.logStepFailure(enhancedContext, OnboardingConstants.Messages.NO_SCHEMA_INFO_AVAILABLE);
+            return StepResult.failure(OnboardingConstants.Messages.NO_SCHEMA_INFO_AVAILABLE, getStepName(), context.getCorrelationId());
         }
         
         String entityId = (String) schemaInfo.get("entityId");
@@ -45,7 +57,8 @@ public class FenergoJourneyLaunchStep implements GenericStepExecutor {
         Integer version = (Integer) schemaInfo.get("journeySchemaVersion");
         
         if (entityId == null || journeySchemaId == null) {
-            return StepResult.failure("Missing required entityId or journeySchemaId", getStepName(), context.getCorrelationId());
+            stepLoggingUtil.logStepFailure(enhancedContext, OnboardingConstants.Messages.MISSING_ENTITY_ID_OR_SCHEMA);
+            return StepResult.failure(OnboardingConstants.Messages.MISSING_ENTITY_ID_OR_SCHEMA, getStepName(), context.getCorrelationId());
         }
         
         try {
@@ -56,10 +69,10 @@ public class FenergoJourneyLaunchStep implements GenericStepExecutor {
             CompletableFuture<Map> future = CompletableFuture.supplyAsync(() -> {
                 return restClient.post()
                         .uri(journeyCommandUrl)
-                        .header("Authorization", "Bearer " + getAuthToken())
-                        .header("X-TENANT-ID", tenantId)
-                        .header("X-CORRELATION-ID", context.getCorrelationId())
-                        .header("Content-Type", "application/json")
+                        .header(OnboardingConstants.HttpHeaders.AUTHORIZATION, OnboardingConstants.HttpHeaders.BEARER_PREFIX + getAuthToken())
+                        .header(OnboardingConstants.HttpHeaders.X_TENANT_ID, tenantId)
+                        .header(OnboardingConstants.HttpHeaders.X_CORRELATION_ID, context.getCorrelationId())
+                        .header(OnboardingConstants.HttpHeaders.CONTENT_TYPE, OnboardingConstants.ContentTypes.APPLICATION_JSON)
                         .body(launchPayload)
                         .retrieve()
                         .body(Map.class);
@@ -79,17 +92,22 @@ public class FenergoJourneyLaunchStep implements GenericStepExecutor {
                 
                 context.addStepResult(getStepName(), launchInfo);
                 
-                log.info("[CORRELATION:{}] Step 3 completed successfully. Journey launched for entity: {} with schema: {}", 
-                        context.getCorrelationId(), entityId, journeySchemaId);
+                // Log step completion with dynamic step number
+                stepLoggingUtil.logStepCompletion(enhancedContext, 
+                    String.format("Journey launched for entity: %s with schema: %s", entityId, journeySchemaId));
+                
+                // Log data sharing (this is the final step)
+                stepLoggingUtil.logStepDataSharing(enhancedContext, "Journey Launch Info", launchInfo);
                 
                 return StepResult.success(launchInfo, getStepName(), context.getCorrelationId());
             } else {
-                return StepResult.failure("No response from Fenergo Journey Command API", getStepName(), context.getCorrelationId());
+                stepLoggingUtil.logStepFailure(enhancedContext, OnboardingConstants.Messages.NO_JOURNEY_RESPONSE);
+                return StepResult.failure(OnboardingConstants.Messages.NO_JOURNEY_RESPONSE, getStepName(), context.getCorrelationId());
             }
             
         } catch (Exception e) {
-            log.error("[CORRELATION:{}] Step 3 failed: {}", context.getCorrelationId(), e.getMessage());
-            return StepResult.failure("Journey launch failed: " + e.getMessage(), getStepName(), context.getCorrelationId());
+            stepLoggingUtil.logStepFailure(enhancedContext, e.getMessage());
+            return StepResult.failure(OnboardingConstants.Messages.JOURNEY_LAUNCH_FAILED + e.getMessage(), getStepName(), context.getCorrelationId());
         }
     }
     
@@ -101,13 +119,13 @@ public class FenergoJourneyLaunchStep implements GenericStepExecutor {
         return Map.of(
                 "data", Map.of(
                         "entityId", entityId,
-                        "journeyType", "Client Onboarding",
+                        "journeyType", OnboardingConstants.JourneyTypes.CLIENT_ONBOARDING,
                         "journeySchemaId", journeySchemaId,
                         "journeySchemaVersionNumber", version,
-                        "jurisdictions", new String[]{"US"},
+                        "jurisdictions", new String[]{OnboardingConstants.DefaultValues.DEFAULT_JURISDICTION},
                         "accessLayers", Map.of(
-                                "internal", true,
-                                "external", false
+                                OnboardingConstants.AccessLayers.INTERNAL, true,
+                                OnboardingConstants.AccessLayers.EXTERNAL, false
                         )
                 )
         );
@@ -118,7 +136,7 @@ public class FenergoJourneyLaunchStep implements GenericStepExecutor {
      */
     private String getAuthToken() {
         // In real implementation, this would call your token service
-        return "mock-fenergo-token";
+        return OnboardingConstants.MockTokens.FENERGO_TOKEN;
     }
     
     @Override
@@ -132,18 +150,19 @@ public class FenergoJourneyLaunchStep implements GenericStepExecutor {
                 .backoffMultiplier(2.0)
                 .asyncEnabled(false)
                 .timeoutMs(60000)
-                .dependencies(new String[]{"FENERGO_JOURNEY_SCHEMA_EVALUATION"})
+                .dependencies(new String[]{OnboardingConstants.StepNames.FENERGO_JOURNEY_SCHEMA_EVALUATION})
                 .build();
     }
     
     @Override
     public String getStepName() {
-        return "FENERGO_JOURNEY_LAUNCH";
+        return OnboardingConstants.StepNames.FENERGO_JOURNEY_LAUNCH;
     }
     
     @Override
     public boolean canExecute(GenericStepContext context) {
-        return context.hasStepResult("FENERGO_JOURNEY_SCHEMA_EVALUATION");
+        return context.hasStepResult(OnboardingConstants.StepNames.FENERGO_JOURNEY_SCHEMA_EVALUATION);
     }
 }
+
 

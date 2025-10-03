@@ -1,9 +1,16 @@
 package com.banking.onboarding.step.impl;
 
+import com.banking.onboarding.constants.OnboardingConstants;
+import com.banking.onboarding.enums.OnboardingEnums;
 import com.banking.onboarding.step.GenericStepContext;
 import com.banking.onboarding.step.GenericStepExecutor;
 import com.banking.onboarding.step.StepConfig;
 import com.banking.onboarding.step.StepResult;
+import com.banking.onboarding.step.builder.ApiPayloadBuilder;
+import com.banking.onboarding.step.data.FenergoApiData;
+import com.banking.onboarding.step.enhancer.StepContextEnhancer;
+import com.banking.onboarding.step.manager.StepResultDataManager;
+import com.banking.onboarding.step.util.DynamicStepLoggingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,11 +19,13 @@ import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Step 2: Evaluate Journey Schema via Fenergo Logic Engine - SYNCHRONOUS
+ * Fenergo Journey Schema Evaluation Step - Dynamic Step Numbering
  * Uses Logic Engine to determine the correct journey schema based on entity attributes
+ * Uses dynamic step numbering instead of hardcoded step numbers
  */
 @Slf4j
 @Component
@@ -24,6 +33,10 @@ import java.util.concurrent.CompletableFuture;
 public class FenergoJourneySchemaEvaluationStep implements GenericStepExecutor {
     
     private final RestClient restClient;
+    private final DynamicStepLoggingUtil stepLoggingUtil;
+    private final StepContextEnhancer stepContextEnhancer;
+    private final ApiPayloadBuilder payloadBuilder;
+    private final StepResultDataManager resultDataManager;
     
     @Value("${fenergo.logic.engine.url:https://fenergo.example.com/journeylogicengine/api/engine/evaluate-journey-schema}")
     private String logicEngineUrl;
@@ -36,13 +49,21 @@ public class FenergoJourneySchemaEvaluationStep implements GenericStepExecutor {
     
     @Override
     public StepResult<Object> execute(GenericStepContext context) {
-        log.info("[CORRELATION:{}] Executing Step 2: Evaluate Journey Schema via Logic Engine", context.getCorrelationId());
+        // Enhance context with dynamic step numbering
+        StepContextEnhancer.EnhancedStepContext enhancedContext = 
+            stepContextEnhancer.enhanceContext(context, getStepName());
         
-        // Get entity ID from previous step
-        String entityId = context.getStepResult("FENERGO_ENTITY_CREATION", String.class);
-        if (entityId == null) {
+        // Log step start with dynamic step number
+        stepLoggingUtil.logStepStart(enhancedContext, "Evaluate Journey Schema via Logic Engine");
+        
+        // Get entity ID from previous step using proper data structures
+        Optional<String> entityIdOpt = resultDataManager.getEntityId(context);
+        if (entityIdOpt.isEmpty()) {
+            stepLoggingUtil.logStepFailure(enhancedContext, "No entity ID available from previous step");
             return StepResult.failure("No entity ID available from previous step", getStepName(), context.getCorrelationId());
         }
+        
+        String entityId = entityIdOpt.get();
         
         try {
             // Build evaluation payload following Fenergo Logic Engine API spec
@@ -182,4 +203,5 @@ public class FenergoJourneySchemaEvaluationStep implements GenericStepExecutor {
         return context.hasStepResult("FENERGO_ENTITY_CREATION");
     }
 }
+
 

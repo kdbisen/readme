@@ -43,3 +43,6 @@ echo "   POST /api/v1/onboarding/process-entity"
 echo "   GET  /api/v1/onboarding/status/{processId}"
 echo "   GET  /api/v1/onboarding/health"
 
+
+
+

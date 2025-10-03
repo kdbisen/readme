@@ -1,6 +1,6 @@
 package com.banking.onboarding.step;
 
-import com.banking.onboarding.step.impl.GenericXmlToJsonTransformationStep;
+import com.banking.onboarding.step.impl.XmlToJsonTransformationStep;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
@@ -97,4 +97,7 @@ public class GenericStepPatternTest {
         assertNull(failureResult.getData());
     }
 }
+
+
+
 

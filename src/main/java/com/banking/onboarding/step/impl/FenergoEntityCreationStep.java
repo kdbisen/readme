@@ -1,9 +1,16 @@
 package com.banking.onboarding.step.impl;
 
+import com.banking.onboarding.constants.OnboardingConstants;
+import com.banking.onboarding.enums.OnboardingEnums;
 import com.banking.onboarding.step.GenericStepContext;
 import com.banking.onboarding.step.GenericStepExecutor;
 import com.banking.onboarding.step.StepConfig;
 import com.banking.onboarding.step.StepResult;
+import com.banking.onboarding.step.builder.ApiPayloadBuilder;
+import com.banking.onboarding.step.data.FenergoApiData;
+import com.banking.onboarding.step.enhancer.StepContextEnhancer;
+import com.banking.onboarding.step.manager.StepResultDataManager;
+import com.banking.onboarding.step.util.DynamicStepLoggingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,8 +21,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Step 1: Create Entity via Fenergo Entity API - SYNCHRONOUS
+ * Fenergo Entity Creation Step - Dynamic Step Numbering
  * Creates entity in Fenergo system following exact API patterns
+ * Uses dynamic step numbering instead of hardcoded step numbers
  */
 @Slf4j
 @Component
@@ -23,6 +31,10 @@ import java.util.concurrent.CompletableFuture;
 public class FenergoEntityCreationStep implements GenericStepExecutor {
     
     private final RestClient restClient;
+    private final DynamicStepLoggingUtil stepLoggingUtil;
+    private final StepContextEnhancer stepContextEnhancer;
+    private final ApiPayloadBuilder payloadBuilder;
+    private final StepResultDataManager resultDataManager;
     
     @Value("${fenergo.entity.api.url:https://fenergo.example.com/entity}")
     private String entityApiUrl;
@@ -32,26 +44,32 @@ public class FenergoEntityCreationStep implements GenericStepExecutor {
     
     @Override
     public StepResult<Object> execute(GenericStepContext context) {
-        log.info("[CORRELATION:{}] Executing Step 1: Create Entity via Fenergo Entity API", context.getCorrelationId());
+        // Enhance context with dynamic step numbering
+        StepContextEnhancer.EnhancedStepContext enhancedContext = 
+            stepContextEnhancer.enhanceContext(context, getStepName());
+        
+        // Log step start with dynamic step number
+        stepLoggingUtil.logStepStart(enhancedContext, "Create Entity via Fenergo Entity API");
         
         // Get JSON data from previous step
         Object jsonData = getInputData(context);
         if (jsonData == null) {
-            return StepResult.failure("No JSON data available from previous step", getStepName(), context.getCorrelationId());
+            stepLoggingUtil.logStepFailure(enhancedContext, OnboardingConstants.Messages.NO_JSON_DATA_AVAILABLE);
+            return StepResult.failure(OnboardingConstants.Messages.NO_JSON_DATA_AVAILABLE, getStepName(), context.getCorrelationId());
         }
         
         try {
-            // Build entity creation payload following Fenergo API spec
-            Map<String, Object> entityPayload = buildEntityPayload(jsonData, context);
+            // Build entity creation payload using proper data structures
+            FenergoApiData.EntityCreationPayload entityPayload = payloadBuilder.buildEntityCreationPayload(jsonData, context.getCorrelationId());
             
             // Call Fenergo Entity API synchronously
             CompletableFuture<Map> future = CompletableFuture.supplyAsync(() -> {
                 return restClient.post()
                         .uri(entityApiUrl)
-                        .header("Authorization", "Bearer " + getAuthToken())
-                        .header("X-TENANT-ID", tenantId)
-                        .header("X-CORRELATION-ID", context.getCorrelationId())
-                        .header("Content-Type", "application/json")
+                        .header(OnboardingConstants.HttpHeaders.AUTHORIZATION, OnboardingConstants.HttpHeaders.BEARER_PREFIX + getAuthToken())
+                        .header(OnboardingConstants.HttpHeaders.X_TENANT_ID, tenantId)
+                        .header(OnboardingConstants.HttpHeaders.X_CORRELATION_ID, context.getCorrelationId())
+                        .header(OnboardingConstants.HttpHeaders.CONTENT_TYPE, OnboardingConstants.ContentTypes.APPLICATION_JSON)
                         .body(entityPayload)
                         .retrieve()
                         .body(Map.class);
@@ -59,50 +77,37 @@ public class FenergoEntityCreationStep implements GenericStepExecutor {
             
             Map response = future.get(); // Block here
             
-            if (response != null && response.containsKey("data")) {
-                Map<String, Object> responseData = (Map<String, Object>) response.get("data");
-                String entityId = (String) responseData.get("entityId");
+            // Parse response using proper data structures
+            FenergoApiData.EntityCreationResponse entityResponse = payloadBuilder.parseEntityCreationResponse(response);
+            
+            if (entityResponse != null && entityResponse.getData() != null) {
+                String entityId = entityResponse.getData().getEntityId();
                 
                 if (entityId != null) {
-                    // Store entity ID for next steps
-                    context.addStepResult(getStepName(), entityId);
+                    // Store entity creation result using proper data structures
+                    resultDataManager.storeEntityCreationResult(context, entityId);
                     
-                    log.info("[CORRELATION:{}] Step 1 completed successfully. Entity created with ID: {}", 
-                            context.getCorrelationId(), entityId);
+                    // Log step completion with dynamic step number
+                    stepLoggingUtil.logStepCompletion(enhancedContext, 
+                        String.format("Entity created with ID: %s", entityId));
+                    
+                    // Log data sharing for next step
+                    stepLoggingUtil.logStepDataSharing(enhancedContext, "Entity ID", entityId);
                     
                     return StepResult.success(entityId, getStepName(), context.getCorrelationId());
                 } else {
-                    return StepResult.failure("Entity creation succeeded but no entityId returned", getStepName(), context.getCorrelationId());
+                    stepLoggingUtil.logStepFailure(enhancedContext, OnboardingConstants.Messages.ENTITY_CREATION_NO_ID);
+                    return StepResult.failure(OnboardingConstants.Messages.ENTITY_CREATION_NO_ID, getStepName(), context.getCorrelationId());
                 }
             } else {
-                return StepResult.failure("Invalid response from Fenergo Entity API", getStepName(), context.getCorrelationId());
+                stepLoggingUtil.logStepFailure(enhancedContext, OnboardingConstants.Messages.INVALID_FENERGO_RESPONSE);
+                return StepResult.failure(OnboardingConstants.Messages.INVALID_FENERGO_RESPONSE, getStepName(), context.getCorrelationId());
             }
             
         } catch (Exception e) {
-            log.error("[CORRELATION:{}] Step 1 failed: {}", context.getCorrelationId(), e.getMessage());
-            return StepResult.failure("Entity creation failed: " + e.getMessage(), getStepName(), context.getCorrelationId());
+            stepLoggingUtil.logStepFailure(enhancedContext, e.getMessage());
+            return StepResult.failure(OnboardingConstants.Messages.ENTITY_CREATION_FAILED + e.getMessage(), getStepName(), context.getCorrelationId());
         }
-    }
-    
-    /**
-     * Build entity payload following Fenergo API specification
-     */
-    private Map<String, Object> buildEntityPayload(Object jsonData, GenericStepContext context) {
-        // Parse JSON data and extract entity information
-        // This is a simplified example - in real implementation, you'd parse the JSON properly
-        
-        return Map.of(
-                "data", Map.of(
-                        "type", "Company",
-                        "targetEntity", "Client",
-                        "properties", Map.of(
-                                "name", Map.of("type", "Single", "value", "Acme Ltd"),
-                                "jurisdiction", Map.of("type", "Single", "value", "US"),
-                                "entityType", Map.of("type", "Single", "value", "Company")
-                        ),
-                        "policyJurisdictions", new String[]{"US"}
-                )
-        );
     }
     
     /**
@@ -110,7 +115,7 @@ public class FenergoEntityCreationStep implements GenericStepExecutor {
      */
     private String getAuthToken() {
         // In real implementation, this would call your token service
-        return "mock-fenergo-token";
+        return OnboardingConstants.MockTokens.FENERGO_TOKEN;
     }
     
     @Override
@@ -124,18 +129,19 @@ public class FenergoEntityCreationStep implements GenericStepExecutor {
                 .backoffMultiplier(2.0)
                 .asyncEnabled(false)
                 .timeoutMs(60000)
-                .dependencies(new String[]{"XML_TO_JSON_TRANSFORMATION"})
+                .dependencies(new String[]{OnboardingConstants.StepNames.XML_TO_JSON_TRANSFORMATION})
                 .build();
     }
     
     @Override
     public String getStepName() {
-        return "FENERGO_ENTITY_CREATION";
+        return OnboardingConstants.StepNames.FENERGO_ENTITY_CREATION;
     }
     
     @Override
     public boolean canExecute(GenericStepContext context) {
-        return context.hasStepResult("XML_TO_JSON_TRANSFORMATION") || context.getInputData() != null;
+        return context.hasStepResult(OnboardingConstants.StepNames.XML_TO_JSON_TRANSFORMATION) || context.getInputData() != null;
     }
 }
+
 

@@ -1,5 +1,8 @@
 package com.banking.onboarding.step;
 
+import com.banking.onboarding.constants.OnboardingConstants;
+import com.banking.onboarding.step.service.DynamicStepNumberingService;
+import com.banking.onboarding.step.util.DynamicStepLoggingUtil;
 import com.banking.onboarding.util.CompletePayloadStorageUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +23,8 @@ public class GenericStepExecutionEngine {
     
     private final Map<String, GenericStepExecutor> stepExecutors = new ConcurrentHashMap<>();
     private final CompletePayloadStorageUtil payloadStorageUtil;
+    private final DynamicStepNumberingService stepNumberingService;
+    private final DynamicStepLoggingUtil stepLoggingUtil;
     
     /**
      * Register a step executor
@@ -27,7 +32,7 @@ public class GenericStepExecutionEngine {
     public void register(GenericStepExecutor executor) {
         String stepName = executor.getStepName();
         stepExecutors.put(stepName, executor);
-        log.info("Registered generic step executor: {}", stepName);
+        log.info("Registered generic step executor: {} (Step {})", stepName, stepNumberingService.getStepNumber(stepName));
     }
     
     /**
@@ -41,8 +46,8 @@ public class GenericStepExecutionEngine {
         
         StepConfig config = executor.getConfig();
         
-        log.info("[CORRELATION:{}] Executing step: {} with config: {}", 
-                context.getCorrelationId(), stepName, config);
+        log.info("[CORRELATION:{}] Executing step: {} (Step {}) with config: {}", 
+                context.getCorrelationId(), stepName, stepNumberingService.getStepNumber(stepName), config);
         
         // Check if step can be executed
         if (!executor.canExecute(context)) {
@@ -63,26 +68,35 @@ public class GenericStepExecutionEngine {
         log.info("[CORRELATION:{}] Starting sequential execution of {} steps", 
                 context.getCorrelationId(), stepNames.size());
         
+        // Log execution order summary
+        stepLoggingUtil.logExecutionOrderSummary(context.getCorrelationId());
+        
+        int completedSteps = 0;
         for (String stepName : stepNames) {
-            log.info("[CORRELATION:{}] Executing step: {}", context.getCorrelationId(), stepName);
+            int stepNumber = stepNumberingService.getStepNumber(stepName);
+            log.info("[CORRELATION:{}] Executing step: {} (Step {})", context.getCorrelationId(), stepName, stepNumber);
             
             StepResult<Object> stepResult = executeStep(stepName, context);
             
             if (stepResult.isSuccess()) {
+                completedSteps++;
                 // Store result in context for next steps
                 context.addStepResult(stepName, stepResult.getData());
                 results.put(stepName, stepResult.getData());
                 
+                // Log progress
+                stepLoggingUtil.logProcessProgress(context.getCorrelationId(), stepName, completedSteps, stepNames.size());
+                
                 log.info("[CORRELATION:{}] Step {} completed successfully. Data shared: {}", 
-                        context.getCorrelationId(), stepName, 
+                        context.getCorrelationId(), stepNumber, 
                         stepResult.getData() != null ? stepResult.getData().getClass().getSimpleName() : "null");
             } else {
                 log.error("[CORRELATION:{}] Step {} failed: {}", 
-                        context.getCorrelationId(), stepName, stepResult.getErrorMessage());
+                        context.getCorrelationId(), stepNumber, stepResult.getErrorMessage());
                 
                 return StepResult.failure(
                         "Step " + stepName + " failed: " + stepResult.getErrorMessage(),
-                        "SEQUENCE", context.getCorrelationId()
+                        OnboardingConstants.SequenceNames.SEQUENCE, context.getCorrelationId()
                 );
             }
         }
@@ -90,7 +104,7 @@ public class GenericStepExecutionEngine {
         log.info("[CORRELATION:{}] All {} steps completed successfully", 
                 context.getCorrelationId(), stepNames.size());
         
-        return StepResult.success(results, "SEQUENCE", context.getCorrelationId());
+        return StepResult.success(results, OnboardingConstants.SequenceNames.SEQUENCE, context.getCorrelationId());
     }
     
     /**

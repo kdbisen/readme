@@ -1,6 +1,8 @@
 package com.banking.onboarding.exception;
 
 import com.banking.onboarding.audit.AuditService;
+import com.banking.onboarding.constants.OnboardingConstants;
+import com.banking.onboarding.enums.OnboardingEnums;
 import com.banking.onboarding.service.CorrelationIdService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,19 +54,19 @@ public class GlobalExceptionHandler {
         auditService.logError(
             null, // processId - will be extracted from context if available
             correlationId,
-            "BUSINESS_ERROR",
+            OnboardingConstants.ErrorTypes.BUSINESS_ERROR,
             ex.getMessage(),
             getStackTrace(ex),
             Map.of(
                 "errorCode", ex.getErrorCode(),
                 "requestUri", getPath(request),
                 "method", getMethod(request),
-                "userAgent", request.getHeader("User-Agent")
+                "userAgent", request.getHeader(OnboardingConstants.HttpHeaders.USER_AGENT)
             )
         );
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("BUSINESS_ERROR")
+                .error(OnboardingConstants.ErrorTypes.BUSINESS_ERROR)
                 .errorCode(ex.getErrorCode())
                 .message(ex.getMessage())
                 .status(HttpStatus.BAD_REQUEST)
@@ -92,8 +94,8 @@ public class GlobalExceptionHandler {
         log.error("[CORRELATION:{}] Validation error: {}", correlationId, ex.getMessage());
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("VALIDATION_ERROR")
-                .errorCode("VALIDATION_ERROR")
+                .error(OnboardingConstants.ErrorTypes.VALIDATION_ERROR)
+                .errorCode(OnboardingConstants.ErrorCodes.VALIDATION_ERROR)
                 .message(ex.getMessage())
                 .status(HttpStatus.BAD_REQUEST)
                 .correlationId(correlationId)
@@ -101,7 +103,7 @@ public class GlobalExceptionHandler {
                 .timestamp(java.time.LocalDateTime.now())
                 .path(getPath(request))
                 .method(getMethod(request))
-                .suggestion("Please check your input data and ensure all required fields are provided with valid values.")
+                .suggestion(OnboardingConstants.Suggestions.CHECK_INPUT_DATA)
                 .build();
         
         return ResponseEntity.badRequest().body(errorResponse);
@@ -120,8 +122,8 @@ public class GlobalExceptionHandler {
         log.error("[CORRELATION:{}] Process error: {}", correlationId, ex.getMessage());
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("PROCESS_ERROR")
-                .errorCode("PROCESS_ERROR")
+                .error(OnboardingConstants.ErrorTypes.PROCESS_ERROR)
+                .errorCode(OnboardingConstants.ErrorCodes.PROCESS_ERROR)
                 .message(ex.getMessage())
                 .status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .correlationId(correlationId)
@@ -129,7 +131,7 @@ public class GlobalExceptionHandler {
                 .timestamp(java.time.LocalDateTime.now())
                 .path(getPath(request))
                 .method(getMethod(request))
-                .suggestion("Please check the process status and retry if necessary.")
+                .suggestion(OnboardingConstants.Suggestions.CHECK_PROCESS_STATUS)
                 .build();
         
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorResponse);
@@ -156,7 +158,7 @@ public class GlobalExceptionHandler {
         }
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("EXTERNAL_API_ERROR")
+                .error(OnboardingConstants.ErrorTypes.EXTERNAL_API_ERROR)
                 .errorCode(ex.getErrorCode())
                 .message(ex.getMessage())
                 .status(HttpStatus.BAD_GATEWAY)
@@ -166,7 +168,7 @@ public class GlobalExceptionHandler {
                 .path(getPath(request))
                 .method(getMethod(request))
                 .metadata(metadata)
-                .suggestion("External service is temporarily unavailable. Please try again later.")
+                .suggestion(OnboardingConstants.Suggestions.EXTERNAL_SERVICE_UNAVAILABLE)
                 .build();
         
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(errorResponse);
@@ -192,8 +194,8 @@ public class GlobalExceptionHandler {
         }
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("STEP_EXECUTION_ERROR")
-                .errorCode("STEP_EXECUTION_ERROR")
+                .error(OnboardingConstants.ErrorTypes.STEP_EXECUTION_ERROR)
+                .errorCode(OnboardingConstants.ErrorCodes.STEP_EXECUTION_ERROR)
                 .message(ex.getMessage())
                 .status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .correlationId(correlationId)
@@ -202,7 +204,7 @@ public class GlobalExceptionHandler {
                 .path(getPath(request))
                 .method(getMethod(request))
                 .metadata(metadata)
-                .suggestion("Step execution failed. Please check the process status and retry if necessary.")
+                .suggestion(OnboardingConstants.Suggestions.STEP_EXECUTION_FAILED)
                 .build();
         
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorResponse);
@@ -231,8 +233,8 @@ public class GlobalExceptionHandler {
         log.error("[CORRELATION:{}] Validation error: {}", correlationId, details);
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("VALIDATION_ERROR")
-                .errorCode("VALIDATION_ERROR")
+                .error(OnboardingConstants.ErrorTypes.VALIDATION_ERROR)
+                .errorCode(OnboardingConstants.ErrorCodes.VALIDATION_ERROR)
                 .message("Request validation failed")
                 .status(HttpStatus.BAD_REQUEST)
                 .correlationId(correlationId)
@@ -241,7 +243,7 @@ public class GlobalExceptionHandler {
                 .path(getPath(request))
                 .method(getMethod(request))
                 .details(details)
-                .suggestion("Please check your input data and ensure all required fields are provided with valid values.")
+                .suggestion(OnboardingConstants.Suggestions.CHECK_INPUT_DATA)
                 .build();
         
         return ResponseEntity.badRequest().body(errorResponse);
@@ -266,8 +268,8 @@ public class GlobalExceptionHandler {
         log.error("[CORRELATION:{}] Binding error: {}", correlationId, details);
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("BINDING_ERROR")
-                .errorCode("BINDING_ERROR")
+                .error(OnboardingConstants.ErrorTypes.BINDING_ERROR)
+                .errorCode(OnboardingConstants.ErrorCodes.BINDING_ERROR)
                 .message("Request binding failed")
                 .status(HttpStatus.BAD_REQUEST)
                 .correlationId(correlationId)
@@ -276,7 +278,7 @@ public class GlobalExceptionHandler {
                 .path(getPath(request))
                 .method(getMethod(request))
                 .details(details)
-                .suggestion("Please check your request format and ensure all fields are properly formatted.")
+                .suggestion(OnboardingConstants.Suggestions.CHECK_REQUEST_FORMAT)
                 .build();
         
         return ResponseEntity.badRequest().body(errorResponse);
@@ -298,8 +300,8 @@ public class GlobalExceptionHandler {
         details.put("parameterType", ex.getParameterType());
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("MISSING_PARAMETER")
-                .errorCode("MISSING_PARAMETER")
+                .error(OnboardingConstants.ErrorTypes.MISSING_PARAMETER)
+                .errorCode(OnboardingConstants.ErrorCodes.MISSING_PARAMETER)
                 .message("Required parameter is missing: " + ex.getParameterName())
                 .status(HttpStatus.BAD_REQUEST)
                 .correlationId(correlationId)
@@ -308,7 +310,7 @@ public class GlobalExceptionHandler {
                 .path(getPath(request))
                 .method(getMethod(request))
                 .details(details)
-                .suggestion("Please provide the missing required parameter: " + ex.getParameterName())
+                .suggestion(OnboardingConstants.Suggestions.PROVIDE_MISSING_PARAMETER + ex.getParameterName())
                 .build();
         
         return ResponseEntity.badRequest().body(errorResponse);
@@ -331,8 +333,8 @@ public class GlobalExceptionHandler {
         details.put("providedValue", ex.getValue());
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("TYPE_MISMATCH")
-                .errorCode("TYPE_MISMATCH")
+                .error(OnboardingConstants.ErrorTypes.TYPE_MISMATCH)
+                .errorCode(OnboardingConstants.ErrorCodes.TYPE_MISMATCH)
                 .message("Invalid parameter type for: " + ex.getName())
                 .status(HttpStatus.BAD_REQUEST)
                 .correlationId(correlationId)
@@ -341,7 +343,7 @@ public class GlobalExceptionHandler {
                 .path(getPath(request))
                 .method(getMethod(request))
                 .details(details)
-                .suggestion("Please provide a valid value of type " + ex.getRequiredType().getSimpleName() + " for parameter " + ex.getName())
+                .suggestion(OnboardingConstants.Suggestions.PROVIDE_VALID_TYPE + ex.getRequiredType().getSimpleName() + " for parameter " + ex.getName())
                 .build();
         
         return ResponseEntity.badRequest().body(errorResponse);
@@ -359,8 +361,8 @@ public class GlobalExceptionHandler {
         log.error("[CORRELATION:{}] Message not readable: {}", correlationId, ex.getMessage());
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("MALFORMED_REQUEST")
-                .errorCode("MALFORMED_REQUEST")
+                .error(OnboardingConstants.ErrorTypes.MALFORMED_REQUEST)
+                .errorCode(OnboardingConstants.ErrorCodes.MALFORMED_REQUEST)
                 .message("Request body is malformed or not readable")
                 .status(HttpStatus.BAD_REQUEST)
                 .correlationId(correlationId)
@@ -368,7 +370,7 @@ public class GlobalExceptionHandler {
                 .timestamp(java.time.LocalDateTime.now())
                 .path(getPath(request))
                 .method(getMethod(request))
-                .suggestion("Please check your request body format (JSON/XML) and ensure it's properly formatted.")
+                .suggestion(OnboardingConstants.Suggestions.CHECK_REQUEST_BODY)
                 .build();
         
         return ResponseEntity.badRequest().body(errorResponse);
@@ -390,8 +392,8 @@ public class GlobalExceptionHandler {
         details.put("supportedMethods", ex.getSupportedMethods());
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("METHOD_NOT_SUPPORTED")
-                .errorCode("METHOD_NOT_SUPPORTED")
+                .error(OnboardingConstants.ErrorTypes.METHOD_NOT_SUPPORTED)
+                .errorCode(OnboardingConstants.ErrorCodes.METHOD_NOT_SUPPORTED)
                 .message("HTTP method not supported: " + ex.getMethod())
                 .status(HttpStatus.METHOD_NOT_ALLOWED)
                 .correlationId(correlationId)
@@ -400,7 +402,7 @@ public class GlobalExceptionHandler {
                 .path(getPath(request))
                 .method(getMethod(request))
                 .details(details)
-                .suggestion("Please use one of the supported HTTP methods: " + String.join(", ", ex.getSupportedMethods()))
+                .suggestion(OnboardingConstants.Suggestions.USE_SUPPORTED_METHODS + String.join(", ", ex.getSupportedMethods()))
                 .build();
         
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(errorResponse);
@@ -418,8 +420,8 @@ public class GlobalExceptionHandler {
         log.error("[CORRELATION:{}] No handler found: {}", correlationId, ex.getRequestURL());
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("NOT_FOUND")
-                .errorCode("NOT_FOUND")
+                .error(OnboardingConstants.ErrorTypes.NOT_FOUND)
+                .errorCode(OnboardingConstants.ErrorCodes.NOT_FOUND)
                 .message("Endpoint not found: " + ex.getRequestURL())
                 .status(HttpStatus.NOT_FOUND)
                 .correlationId(correlationId)
@@ -427,7 +429,7 @@ public class GlobalExceptionHandler {
                 .timestamp(java.time.LocalDateTime.now())
                 .path(getPath(request))
                 .method(getMethod(request))
-                .suggestion("Please check the API documentation for available endpoints.")
+                .suggestion(OnboardingConstants.Suggestions.CHECK_API_DOCUMENTATION)
                 .build();
         
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
@@ -449,8 +451,8 @@ public class GlobalExceptionHandler {
         log.error("[CORRELATION:{}] Illegal argument: {}", correlationId, ex.getMessage());
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("ILLEGAL_ARGUMENT")
-                .errorCode("ILLEGAL_ARGUMENT")
+                .error(OnboardingConstants.ErrorTypes.ILLEGAL_ARGUMENT)
+                .errorCode(OnboardingConstants.ErrorCodes.ILLEGAL_ARGUMENT)
                 .message(ex.getMessage())
                 .status(HttpStatus.BAD_REQUEST)
                 .correlationId(correlationId)
@@ -458,7 +460,7 @@ public class GlobalExceptionHandler {
                 .timestamp(java.time.LocalDateTime.now())
                 .path(getPath(request))
                 .method(getMethod(request))
-                .suggestion("Please check your input parameters and ensure they are valid.")
+                .suggestion(OnboardingConstants.Suggestions.CHECK_INPUT_PARAMETERS)
                 .build();
         
         return ResponseEntity.badRequest().body(errorResponse);
@@ -476,8 +478,8 @@ public class GlobalExceptionHandler {
         log.error("[CORRELATION:{}] Runtime error: {}", correlationId, ex.getMessage(), ex);
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("RUNTIME_ERROR")
-                .errorCode("RUNTIME_ERROR")
+                .error(OnboardingConstants.ErrorTypes.RUNTIME_ERROR)
+                .errorCode(OnboardingConstants.ErrorCodes.RUNTIME_ERROR)
                 .message("An unexpected runtime error occurred")
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .correlationId(correlationId)
@@ -485,7 +487,7 @@ public class GlobalExceptionHandler {
                 .timestamp(java.time.LocalDateTime.now())
                 .path(getPath(request))
                 .method(getMethod(request))
-                .suggestion("An unexpected error occurred. Please contact support if this persists.")
+                .suggestion(OnboardingConstants.Suggestions.CONTACT_SUPPORT)
                 .build();
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
@@ -503,8 +505,8 @@ public class GlobalExceptionHandler {
         log.error("[CORRELATION:{}] Generic error: {}", correlationId, ex.getMessage(), ex);
         
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .error("INTERNAL_ERROR")
-                .errorCode("INTERNAL_ERROR")
+                .error(OnboardingConstants.ErrorTypes.INTERNAL_ERROR)
+                .errorCode(OnboardingConstants.ErrorCodes.INTERNAL_ERROR)
                 .message("An internal server error occurred")
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .correlationId(correlationId)
@@ -512,7 +514,7 @@ public class GlobalExceptionHandler {
                 .timestamp(java.time.LocalDateTime.now())
                 .path(getPath(request))
                 .method(getMethod(request))
-                .suggestion("An unexpected error occurred. Please contact support if this persists.")
+                .suggestion(OnboardingConstants.Suggestions.CONTACT_SUPPORT)
                 .build();
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
@@ -538,11 +540,11 @@ public class GlobalExceptionHandler {
 
     private String getBusinessSuggestion(String errorCode) {
         return switch (errorCode) {
-            case "VALIDATION_ERROR" -> "Please check your input data and ensure all required fields are provided with valid values.";
-            case "PROCESS_ERROR" -> "Please check the process status and retry if necessary.";
-            case "EXTERNAL_API_ERROR" -> "External service is temporarily unavailable. Please try again later.";
-            case "STEP_EXECUTION_ERROR" -> "Step execution failed. Please check the process status and retry if necessary.";
-            default -> "Please check your request and try again.";
+            case OnboardingConstants.ErrorCodes.VALIDATION_ERROR -> OnboardingConstants.Suggestions.CHECK_INPUT_DATA;
+            case OnboardingConstants.ErrorCodes.PROCESS_ERROR -> OnboardingConstants.Suggestions.CHECK_PROCESS_STATUS;
+            case OnboardingConstants.ErrorCodes.EXTERNAL_API_ERROR -> OnboardingConstants.Suggestions.EXTERNAL_SERVICE_UNAVAILABLE;
+            case OnboardingConstants.ErrorCodes.STEP_EXECUTION_ERROR -> OnboardingConstants.Suggestions.STEP_EXECUTION_FAILED;
+            default -> OnboardingConstants.Suggestions.TRY_AGAIN;
         };
     }
     

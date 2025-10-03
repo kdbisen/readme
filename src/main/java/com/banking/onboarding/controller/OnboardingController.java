@@ -1,5 +1,7 @@
 package com.banking.onboarding.controller;
 
+import com.banking.onboarding.constants.OnboardingConstants;
+import com.banking.onboarding.enums.OnboardingEnums;
 import com.banking.onboarding.exception.ValidationException;
 import com.banking.onboarding.model.OnboardingProcess;
 import com.banking.onboarding.service.CorrelationIdService;
@@ -35,11 +37,11 @@ public class OnboardingController {
         
         String actualCorrelationId = correlationIdService.getOrGenerateCorrelationId(correlationId);
         String xmlData = request.get("xmlData");
-        String requestType = request.getOrDefault("requestType", "ADD_KYC");
+        String requestType = request.getOrDefault("requestType", OnboardingConstants.RequestTypes.ADD_KYC);
         
         if (xmlData == null || xmlData.trim().isEmpty()) {
             throw new ValidationException(
-                    "XML data is required and cannot be empty", actualCorrelationId);
+                    OnboardingConstants.Messages.XML_DATA_REQUIRED, actualCorrelationId);
         }
         
         log.info("[CORRELATION:{}] Starting complete 4-step entity onboarding process", actualCorrelationId);

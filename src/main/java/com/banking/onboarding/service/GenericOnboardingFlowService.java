@@ -1,5 +1,7 @@
 package com.banking.onboarding.service;
 
+import com.banking.onboarding.constants.OnboardingConstants;
+import com.banking.onboarding.enums.OnboardingEnums;
 import com.banking.onboarding.model.OnboardingProcess;
 import com.banking.onboarding.model.ProcessStep;
 import com.banking.onboarding.repository.OnboardingProcessRepository;
@@ -51,7 +53,7 @@ public class GenericOnboardingFlowService {
                     .orElse(createRejectedProcess(actualCorrelationId, requestType, strategyResult.getMessage()));
         }
         
-        String processId = "PROC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String processId = OnboardingConstants.ProcessIdPrefixes.PROCESS + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         
         log.info("[CORRELATION:{}] Starting generic onboarding flow with processId: {} - Strategy: {}", 
                 actualCorrelationId, processId, strategyResult.getStrategy());
@@ -111,7 +113,7 @@ public class GenericOnboardingFlowService {
         String actualCorrelationId = correlationIdService.getOrGenerateCorrelationId(correlationId);
         
         GenericStepContext context = GenericStepContext.create(actualCorrelationId, 
-                "TEST-" + UUID.randomUUID().toString().substring(0, 8), inputData);
+                OnboardingConstants.ProcessIdPrefixes.TEST + UUID.randomUUID().toString().substring(0, 8), inputData);
         
         return stepExecutionEngine.executeStep(stepName, context);
     }
@@ -122,7 +124,7 @@ public class GenericOnboardingFlowService {
     public OnboardingProcess getProcessById(String processId) {
         return processRepository.findById(processId)
                 .orElseThrow(() -> new com.banking.onboarding.exception.ProcessException(
-                        "Process not found with ID: " + processId));
+                        OnboardingConstants.Messages.PROCESS_NOT_FOUND + processId));
     }
     
     /**
@@ -196,15 +198,15 @@ public class GenericOnboardingFlowService {
      * Create rejected process record
      */
     private OnboardingProcess createRejectedProcess(String correlationId, String requestType, String reason) {
-        String processId = "PROC-REJECTED-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String processId = OnboardingConstants.ProcessIdPrefixes.PROCESS_REJECTED + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         
         OnboardingProcess process = new OnboardingProcess();
         process.setProcessId(processId);
         process.setCorrelationId(correlationId);
         process.setRequestType(requestType);
-        process.setInputData("Request rejected due to correlation ID strategy");
+        process.setInputData(OnboardingConstants.Messages.REQUEST_REJECTED);
         process.setStatus(OnboardingProcess.ProcessStatus.CANCELLED);
-        process.setErrorMessage("Request rejected: " + reason);
+        process.setErrorMessage(OnboardingConstants.Messages.REQUEST_REJECTED_PREFIX + reason);
         process.setCreatedAt(LocalDateTime.now());
         process.setUpdatedAt(LocalDateTime.now());
         process.setCompletedAt(LocalDateTime.now());
