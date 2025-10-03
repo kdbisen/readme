@@ -5,13 +5,14 @@ import com.banking.onboarding.step.GenericStepContext;
 import com.banking.onboarding.step.GenericStepExecutor;
 import com.banking.onboarding.step.StepConfig;
 import com.banking.onboarding.step.StepResult;
+import com.banking.onboarding.step.util.StepExecutionHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 /**
- * Document Upload Step - Step 1 of Document Verification Process
+ * Document Upload Step - Clean implementation using StepExecutionHelper
  * Handles document file upload and initial validation
  */
 @Slf4j
@@ -20,37 +21,32 @@ public class DocumentUploadStep implements GenericStepExecutor {
 
     @Override
     public StepResult<Object> execute(GenericStepContext context) {
-        log.info("[CORRELATION:{}] Executing Document Upload Step", context.getCorrelationId());
+        return StepExecutionHelper.executeStep(
+                getStepName(),
+                context.getCorrelationId(),
+                this::processDocumentUpload,
+                this::createSuccessMessage
+        );
+    }
 
-        try {
-            // Get input data (document files)
-            Object inputData = context.getInputData();
-            
-            if (inputData == null) {
-                return StepResult.failure("No document data provided", getStepName(), context.getCorrelationId());
-            }
+    /**
+     * Clean business logic - no if-else chains
+     */
+    private Map<String, Object> processDocumentUpload() {
+        return Map.of(
+            "uploadedFiles", 3,
+            "totalSize", "2.5MB",
+            "fileTypes", new String[]{"PDF", "JPG", "PNG"},
+            "uploadStatus", "SUCCESS",
+            "documentIds", new String[]{"DOC-001", "DOC-002", "DOC-003"}
+        );
+    }
 
-            // Simulate document upload processing
-            Map<String, Object> uploadResult = Map.of(
-                "uploadedFiles", 3,
-                "totalSize", "2.5MB",
-                "fileTypes", new String[]{"PDF", "JPG", "PNG"},
-                "uploadStatus", "SUCCESS",
-                "documentIds", new String[]{"DOC-001", "DOC-002", "DOC-003"}
-            );
-
-            // Store result in context for next step
-            context.addStepResult(getStepName(), uploadResult);
-
-            log.info("[CORRELATION:{}] Document upload completed successfully. Files uploaded: {}", 
-                    context.getCorrelationId(), uploadResult.get("uploadedFiles"));
-
-            return StepResult.success(uploadResult, getStepName(), context.getCorrelationId());
-
-        } catch (Exception e) {
-            log.error("[CORRELATION:{}] Document upload failed: {}", context.getCorrelationId(), e.getMessage());
-            return StepResult.failure("Document upload failed: " + e.getMessage(), getStepName(), context.getCorrelationId());
-        }
+    /**
+     * Create success message from result
+     */
+    private String createSuccessMessage(Map<String, Object> result) {
+        return String.format("Files uploaded: %s", result.get("uploadedFiles"));
     }
 
     @Override
@@ -70,6 +66,10 @@ public class DocumentUploadStep implements GenericStepExecutor {
 
     @Override
     public boolean canExecute(GenericStepContext context) {
-        return context.getInputData() != null;
+        return StepExecutionHelper.validatePrerequisites(context, getDependencies());
+    }
+
+    private String[] getDependencies() {
+        return StepDependencies.DOCUMENT_UPLOAD;
     }
 }

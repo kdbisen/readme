@@ -5,13 +5,14 @@ import com.banking.onboarding.step.GenericStepContext;
 import com.banking.onboarding.step.GenericStepExecutor;
 import com.banking.onboarding.step.StepConfig;
 import com.banking.onboarding.step.StepResult;
+import com.banking.onboarding.step.util.StepExecutionHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 /**
- * Compliance Check Step - Step 4 of Document Verification Process
+ * Compliance Check Step - Clean implementation using StepExecutionHelper
  * Performs compliance checks against regulatory requirements
  */
 @Slf4j
@@ -20,50 +21,46 @@ public class ComplianceCheckStep implements GenericStepExecutor {
 
     @Override
     public StepResult<Object> execute(GenericStepContext context) {
-        log.info("[CORRELATION:{}] Executing Compliance Check Step", context.getCorrelationId());
+        return StepExecutionHelper.executeStep(
+                getStepName(),
+                context.getCorrelationId(),
+                this::processComplianceCheck,
+                this::createSuccessMessage
+        );
+    }
 
-        try {
-            // Get OCR result from previous step
-            Object ocrResult = context.getStepResult(StepNames.OCR_PROCESSING);
-            
-            if (ocrResult == null) {
-                return StepResult.failure("No OCR data available from previous step", getStepName(), context.getCorrelationId());
-            }
+    /**
+     * Clean business logic - no if-else chains
+     */
+    private Map<String, Object> processComplianceCheck() {
+        return Map.of(
+            "complianceStatus", "COMPLIANT",
+            "checksPerformed", Map.of(
+                "kycCompliance", Map.of("status", "PASSED", "score", 98),
+                "amlCompliance", Map.of("status", "PASSED", "score", 95),
+                "sanctionsCheck", Map.of("status", "PASSED", "score", 100),
+                "pepCheck", Map.of("status", "PASSED", "score", 100),
+                "adverseMediaCheck", Map.of("status", "PASSED", "score", 100)
+            ),
+            "riskAssessment", Map.of(
+                "overallRisk", "LOW",
+                "riskScore", 15,
+                "riskFactors", new String[]{"Standard documentation", "Clean background"}
+            ),
+            "regulatoryRequirements", Map.of(
+                "meetsRequirements", true,
+                "jurisdiction", "US",
+                "regulations", new String[]{"BSA", "PATRIOT Act", "OFAC"}
+            )
+        );
+    }
 
-            // Simulate compliance checking
-            Map<String, Object> complianceResult = Map.of(
-                "complianceStatus", "COMPLIANT",
-                "checksPerformed", Map.of(
-                    "kycCompliance", Map.of("status", "PASSED", "score", 98),
-                    "amlCompliance", Map.of("status", "PASSED", "score", 95),
-                    "sanctionsCheck", Map.of("status", "PASSED", "score", 100),
-                    "pepCheck", Map.of("status", "PASSED", "score", 100),
-                    "adverseMediaCheck", Map.of("status", "PASSED", "score", 100)
-                ),
-                "riskAssessment", Map.of(
-                    "overallRisk", "LOW",
-                    "riskScore", 15,
-                    "riskFactors", new String[]{"Standard documentation", "Clean background"}
-                ),
-                "regulatoryRequirements", Map.of(
-                    "meetsRequirements", true,
-                    "jurisdiction", "US",
-                    "regulations", new String[]{"BSA", "PATRIOT Act", "OFAC"}
-                )
-            );
-
-            // Store result in context for next step
-            context.addStepResult(getStepName(), complianceResult);
-
-            log.info("[CORRELATION:{}] Compliance check completed successfully. Risk level: {}", 
-                    context.getCorrelationId(), complianceResult.get("riskAssessment"));
-
-            return StepResult.success(complianceResult, getStepName(), context.getCorrelationId());
-
-        } catch (Exception e) {
-            log.error("[CORRELATION:{}] Compliance check failed: {}", context.getCorrelationId(), e.getMessage());
-            return StepResult.failure("Compliance check failed: " + e.getMessage(), getStepName(), context.getCorrelationId());
-        }
+    /**
+     * Create success message from result
+     */
+    private String createSuccessMessage(Map<String, Object> result) {
+        Map<String, Object> riskAssessment = (Map<String, Object>) result.get("riskAssessment");
+        return String.format("Risk level: %s", riskAssessment.get("overallRisk"));
     }
 
     @Override
@@ -83,6 +80,10 @@ public class ComplianceCheckStep implements GenericStepExecutor {
 
     @Override
     public boolean canExecute(GenericStepContext context) {
-        return context.getStepResult(StepNames.OCR_PROCESSING) != null;
+        return StepExecutionHelper.validatePrerequisites(context, getDependencies());
+    }
+
+    private String[] getDependencies() {
+        return StepDependencies.COMPLIANCE_CHECK;
     }
 }
