@@ -2,6 +2,7 @@ package com.banking.onboarding.step.service;
 
 import com.banking.onboarding.constants.OnboardingConstants;
 import com.banking.onboarding.step.config.StepConfigurationLoader;
+import com.banking.onboarding.step.config.StepConfigurationLoader.StepInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -98,12 +99,11 @@ public class DynamicStepNumberingService {
      * Get priority-based step number as fallback
      */
     private int getPriorityBasedStepNumber(String stepName) {
-        var stepDefinition = stepConfigurationLoader.getStepDefinition(stepName);
-        if (stepDefinition != null) {
-            return stepDefinition.priority;
+        StepInfo stepInfo = stepConfigurationLoader.getStepDefinition(stepName);
+        if (stepInfo != null) {
+            return stepInfo.priority;
         }
         
-        // Default fallback
         log.warn("No step definition found for {}, using default number 99", stepName);
         return 99;
     }
@@ -123,10 +123,10 @@ public class DynamicStepNumberingService {
      */
     public String getStepNumberWithDescription(String stepName) {
         int stepNumber = getStepNumber(stepName);
-        var stepDefinition = stepConfigurationLoader.getStepDefinition(stepName);
+        StepInfo stepInfo = stepConfigurationLoader.getStepDefinition(stepName);
         
-        if (stepDefinition != null) {
-            return String.format("Step %d: %s", stepNumber, stepDefinition.description);
+        if (stepInfo != null) {
+            return String.format("Step %d: %s", stepNumber, stepInfo.description);
         }
         
         return String.format("Step %d: %s", stepNumber, stepName);
@@ -231,12 +231,11 @@ public class DynamicStepNumberingService {
         for (int i = 0; i < executionOrder.size(); i++) {
             String stepName = executionOrder.get(i);
             int stepNumber = i + 1;
-            var stepDefinition = stepConfigurationLoader.getStepDefinition(stepName);
+            StepInfo stepInfo = stepConfigurationLoader.getStepDefinition(stepName);
             
-            if (stepDefinition != null) {
-                log.info("  {}: {} (Priority: {}, Category: {}, Critical: {})", 
-                        stepNumber, stepName, stepDefinition.priority, 
-                        stepDefinition.category, stepDefinition.critical);
+            if (stepInfo != null) {
+                log.info("  {}: {} (Priority: {})", 
+                        stepNumber, stepName, stepInfo.priority);
             } else {
                 log.info("  {}: {} (No definition found)", stepNumber, stepName);
             }

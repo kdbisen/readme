@@ -30,33 +30,18 @@ public class GenericOnboardingFlowService {
     private final GenericStepExecutionEngine stepExecutionEngine;
     private final StepConfigurationLoader stepConfigurationLoader;
     private final OnboardingProcessRepository processRepository;
-    private final CorrelationIdService correlationIdService;
-    private final CorrelationIdStrategyService correlationIdStrategyService;
     
     /**
      * Execute complete onboarding flow using generic step pattern - SYNCHRONOUS
      * Now includes correlation ID strategy handling
      */
     public OnboardingProcess executeCompleteFlow(String xmlData, String requestType, String correlationId) {
-        String actualCorrelationId = correlationIdService.getOrGenerateCorrelationId(correlationId);
-        
-        // Handle correlation ID strategy
-        CorrelationIdStrategyService.CorrelationIdStrategyResult strategyResult = 
-            correlationIdStrategyService.handleCorrelationIdStrategy(actualCorrelationId, requestType);
-        
-        if (!strategyResult.isShouldProceed()) {
-            log.warn("[CORRELATION:{}] Request rejected due to correlation ID strategy: {}", 
-                    actualCorrelationId, strategyResult.getMessage());
-            
-            // Return the latest existing process or create a rejected process
-            return strategyResult.getLatestProcess()
-                    .orElse(createRejectedProcess(actualCorrelationId, requestType, strategyResult.getMessage()));
-        }
+        String actualCorrelationId = correlationId != null ? correlationId : "CORR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         
         String processId = OnboardingConstants.ProcessIdPrefixes.PROCESS + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         
-        log.info("[CORRELATION:{}] Starting generic onboarding flow with processId: {} - Strategy: {}", 
-                actualCorrelationId, processId, strategyResult.getStrategy());
+        log.info("[CORRELATION:{}] Starting generic onboarding flow with processId: {}", 
+                actualCorrelationId, processId);
         
         // Create initial process record
         OnboardingProcess process = createInitialProcess(processId, actualCorrelationId, requestType, xmlData);
@@ -110,7 +95,7 @@ public class GenericOnboardingFlowService {
      * Execute individual step for testing - SYNCHRONOUS
      */
     public StepResult<Object> executeStep(String stepName, Object inputData, String correlationId) {
-        String actualCorrelationId = correlationIdService.getOrGenerateCorrelationId(correlationId);
+        String actualCorrelationId = correlationId != null ? correlationId : "CORR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         
         GenericStepContext context = GenericStepContext.create(actualCorrelationId, 
                 OnboardingConstants.ProcessIdPrefixes.TEST + UUID.randomUUID().toString().substring(0, 8), inputData);

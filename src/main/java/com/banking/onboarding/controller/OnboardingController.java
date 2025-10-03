@@ -4,7 +4,7 @@ import com.banking.onboarding.constants.OnboardingConstants;
 import com.banking.onboarding.enums.OnboardingEnums;
 import com.banking.onboarding.exception.ValidationException;
 import com.banking.onboarding.model.OnboardingProcess;
-import com.banking.onboarding.service.CorrelationIdService;
+import com.banking.onboarding.service.CorrelationIdStrategyService;
 import com.banking.onboarding.service.GenericOnboardingFlowService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OnboardingController {
 
-    private final CorrelationIdService correlationIdService;
+    private final CorrelationIdStrategyService correlationIdStrategyService;
     private final GenericOnboardingFlowService genericOnboardingFlowService;
 
     /**
@@ -35,7 +35,11 @@ public class OnboardingController {
             @RequestBody Map<String, String> request,
             @RequestHeader(value = "X-Correlation-ID", required = false) String correlationId) {
         
-        String actualCorrelationId = correlationIdService.getOrGenerateCorrelationId(correlationId);
+        // Simple correlation ID processing
+        CorrelationIdStrategyService.SimpleCorrelationResult correlationResult = 
+            correlationIdStrategyService.processCorrelationId(correlationId, request);
+        
+        String actualCorrelationId = correlationResult.getCorrelationId();
         String xmlData = request.get("xmlData");
         String requestType = request.getOrDefault("requestType", OnboardingConstants.RequestTypes.ADD_KYC);
         
@@ -44,11 +48,16 @@ public class OnboardingController {
                     OnboardingConstants.Messages.XML_DATA_REQUIRED, actualCorrelationId);
         }
         
+        // Log simple correlation ID info
+        log.info("[CORRELATION:{}] Processing request #{} - New Correlation ID: {}", 
+                actualCorrelationId, correlationResult.getRequestNumber(), correlationResult.isNewCorrelationId());
+        
         log.info("[CORRELATION:{}] Starting complete 4-step entity onboarding process", actualCorrelationId);
         
         OnboardingProcess process = genericOnboardingFlowService.executeCompleteFlow(xmlData, requestType, actualCorrelationId);
         log.info("[CORRELATION:{}] Complete onboarding process finished with status: {}", 
                 actualCorrelationId, process.getStatus());
+        
         return ResponseEntity.ok(process);
     }
 }
