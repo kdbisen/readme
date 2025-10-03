@@ -14,10 +14,17 @@ public final class OnboardingConstants {
     // REQUEST TYPES
     // ===========================================
     public static final class RequestTypes {
+        // Entity Onboarding Types
         public static final String ADD_KYC = "ADD_KYC";
         public static final String UPDATE_KYC = "UPDATE_KYC";
         public static final String DELETE_KYC = "DELETE_KYC";
         public static final String VERIFY_KYC = "VERIFY_KYC";
+        
+        // Document Verification Types
+        public static final String DOCUMENT_VERIFICATION = "DOCUMENT_VERIFICATION";
+        public static final String IDENTITY_VERIFICATION = "IDENTITY_VERIFICATION";
+        public static final String ADDRESS_VERIFICATION = "ADDRESS_VERIFICATION";
+        public static final String INCOME_VERIFICATION = "INCOME_VERIFICATION";
         
         private RequestTypes() {}
     }
@@ -26,10 +33,18 @@ public final class OnboardingConstants {
     // STEP NAMES
     // ===========================================
     public static final class StepNames {
+        // Entity Onboarding Steps
         public static final String XML_TO_JSON_TRANSFORMATION = "XML_TO_JSON_TRANSFORMATION";
         public static final String FENERGO_ENTITY_CREATION = "FENERGO_ENTITY_CREATION";
         public static final String FENERGO_JOURNEY_SCHEMA_EVALUATION = "FENERGO_JOURNEY_SCHEMA_EVALUATION";
         public static final String FENERGO_JOURNEY_LAUNCH = "FENERGO_JOURNEY_LAUNCH";
+        
+        // Document Verification Steps
+        public static final String DOCUMENT_UPLOAD = "DOCUMENT_UPLOAD";
+        public static final String DOCUMENT_VALIDATION = "DOCUMENT_VALIDATION";
+        public static final String OCR_PROCESSING = "OCR_PROCESSING";
+        public static final String COMPLIANCE_CHECK = "COMPLIANCE_CHECK";
+        public static final String DOCUMENT_APPROVAL = "DOCUMENT_APPROVAL";
         
         private StepNames() {}
     }
@@ -38,10 +53,18 @@ public final class OnboardingConstants {
     // STEP DESCRIPTIONS
     // ===========================================
     public static final class StepDescriptions {
+        // Entity Onboarding Descriptions
         public static final String XML_TO_JSON_TRANSFORMATION = "Transform XML to JSON";
         public static final String FENERGO_ENTITY_CREATION = "Create Fenergo Entity";
         public static final String FENERGO_JOURNEY_SCHEMA_EVALUATION = "Evaluate Journey Schema";
         public static final String FENERGO_JOURNEY_LAUNCH = "Launch Journey";
+        
+        // Document Verification Descriptions
+        public static final String DOCUMENT_UPLOAD = "Upload and validate document files";
+        public static final String DOCUMENT_VALIDATION = "Validate document format and content";
+        public static final String OCR_PROCESSING = "Extract text using OCR technology";
+        public static final String COMPLIANCE_CHECK = "Check document compliance requirements";
+        public static final String DOCUMENT_APPROVAL = "Approve document for processing";
         
         private StepDescriptions() {}
     }
@@ -277,10 +300,18 @@ public final class OnboardingConstants {
     // STEP PRIORITIES
     // ===========================================
     public static final class StepPriorities {
+        // Entity Onboarding Priorities
         public static final int XML_TO_JSON_TRANSFORMATION = 1;
         public static final int FENERGO_ENTITY_CREATION = 2;
         public static final int FENERGO_JOURNEY_SCHEMA_EVALUATION = 3;
         public static final int FENERGO_JOURNEY_LAUNCH = 4;
+        
+        // Document Verification Priorities
+        public static final int DOCUMENT_UPLOAD = 10;
+        public static final int DOCUMENT_VALIDATION = 20;
+        public static final int OCR_PROCESSING = 30;
+        public static final int COMPLIANCE_CHECK = 40;
+        public static final int DOCUMENT_APPROVAL = 50;
         
         private StepPriorities() {}
     }
@@ -396,10 +427,18 @@ public final class OnboardingConstants {
     // STEP DEPENDENCIES
     // ===========================================
     public static final class StepDependencies {
+        // Entity Onboarding Dependencies
         public static final String[] XML_TO_JSON_TRANSFORMATION = {};
         public static final String[] FENERGO_ENTITY_CREATION = {"XML_TO_JSON_TRANSFORMATION"};
         public static final String[] FENERGO_JOURNEY_SCHEMA_EVALUATION = {"FENERGO_ENTITY_CREATION"};
         public static final String[] FENERGO_JOURNEY_LAUNCH = {"FENERGO_JOURNEY_SCHEMA_EVALUATION"};
+        
+        // Document Verification Dependencies
+        public static final String[] DOCUMENT_UPLOAD = {};
+        public static final String[] DOCUMENT_VALIDATION = {"DOCUMENT_UPLOAD"};
+        public static final String[] OCR_PROCESSING = {"DOCUMENT_VALIDATION"};
+        public static final String[] COMPLIANCE_CHECK = {"OCR_PROCESSING"};
+        public static final String[] DOCUMENT_APPROVAL = {"COMPLIANCE_CHECK"};
         
         private StepDependencies() {}
     }

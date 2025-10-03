@@ -63,7 +63,33 @@ public class StepConfigurationLoader {
        StepNames.FENERGO_JOURNEY_LAUNCH,
             new StepInfo(StepPriorities.FENERGO_JOURNEY_LAUNCH,
                        StepDescriptions.FENERGO_JOURNEY_LAUNCH,
-                       StepDependencies.FENERGO_JOURNEY_LAUNCH)
+                       StepDependencies.FENERGO_JOURNEY_LAUNCH),
+
+       // Document Verification Steps
+       StepNames.DOCUMENT_UPLOAD,
+            new StepInfo(StepPriorities.DOCUMENT_UPLOAD,
+                       StepDescriptions.DOCUMENT_UPLOAD,
+                       StepDependencies.DOCUMENT_UPLOAD),
+
+       StepNames.DOCUMENT_VALIDATION,
+            new StepInfo(StepPriorities.DOCUMENT_VALIDATION,
+                       StepDescriptions.DOCUMENT_VALIDATION,
+                       StepDependencies.DOCUMENT_VALIDATION),
+
+       StepNames.OCR_PROCESSING,
+            new StepInfo(StepPriorities.OCR_PROCESSING,
+                       StepDescriptions.OCR_PROCESSING,
+                       StepDependencies.OCR_PROCESSING),
+
+       StepNames.COMPLIANCE_CHECK,
+            new StepInfo(StepPriorities.COMPLIANCE_CHECK,
+                       StepDescriptions.COMPLIANCE_CHECK,
+                       StepDependencies.COMPLIANCE_CHECK),
+
+       StepNames.DOCUMENT_APPROVAL,
+            new StepInfo(StepPriorities.DOCUMENT_APPROVAL,
+                       StepDescriptions.DOCUMENT_APPROVAL,
+                       StepDependencies.DOCUMENT_APPROVAL)
     );
 
     /**
