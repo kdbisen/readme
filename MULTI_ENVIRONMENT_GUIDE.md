@@ -69,9 +69,10 @@ src/main/resources/
 │   │   └── application-staging.properties # Staging config
 │   └── prod/
 │       └── application-prod.properties   # Production config
-├── server.properties                     # Server config (fallback)
-├── mongodb.properties                    # MongoDB config (fallback)
-├── logging.properties                    # Logging config (fallback)
+├── config/core/                          # Core configuration
+│   ├── application-core.properties      # Server config
+│   ├── database.properties              # MongoDB config
+│   └── logging.properties               # Logging config
 └── ... (other fallback properties)
 ```
 
