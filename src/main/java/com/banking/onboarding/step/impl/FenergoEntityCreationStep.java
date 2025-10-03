@@ -123,12 +123,6 @@ public class FenergoEntityCreationStep implements GenericStepExecutor {
         return StepConfig.builder()
                 .stepName(getStepName())
                 .description("Create entity in Fenergo system via Entity API")
-                .retryEnabled(true)
-                .maxRetries(3)
-                .retryDelayMs(2000)
-                .backoffMultiplier(2.0)
-                .asyncEnabled(false)
-                .timeoutMs(60000)
                 .dependencies(new String[]{OnboardingConstants.StepNames.XML_TO_JSON_TRANSFORMATION})
                 .build();
     }

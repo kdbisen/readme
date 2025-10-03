@@ -69,12 +69,6 @@ public class XmlToJsonTransformationStep implements GenericStepExecutor {
         return StepConfig.builder()
                 .stepName(getStepName())
                 .description("Transform XML data to JSON format")
-                .retryEnabled(true)
-                .maxRetries(3)
-                .retryDelayMs(1000)
-                .backoffMultiplier(2.0)
-                .asyncEnabled(false)
-                .timeoutMs(30000)
                 .build();
     }
     

@@ -55,24 +55,12 @@ public class GenericStepPatternTest {
         StepConfig config = StepConfig.builder()
                 .stepName("TEST_STEP")
                 .description("Test step")
-                .retryEnabled(true)
-                .maxRetries(3)
-                .retryDelayMs(1000)
-                .backoffMultiplier(2.0)
-                .asyncEnabled(true)
-                .timeoutMs(30000)
                 .dependencies(new String[]{"PREVIOUS_STEP"})
                 .build();
         
         assertNotNull(config);
         assertEquals("TEST_STEP", config.getStepName());
         assertEquals("Test step", config.getDescription());
-        assertTrue(config.isRetryEnabled());
-        assertEquals(3, config.getMaxRetries());
-        assertEquals(1000, config.getRetryDelayMs());
-        assertEquals(2.0, config.getBackoffMultiplier());
-        assertTrue(config.isAsyncEnabled());
-        assertEquals(30000, config.getTimeoutMs());
         assertArrayEquals(new String[]{"PREVIOUS_STEP"}, config.getDependencies());
     }
     

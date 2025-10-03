@@ -51,7 +51,7 @@ public class GenericStepExecutionEngine {
         
         // Check if step can be executed
         if (!executor.canExecute(context)) {
-            return StepResult.failure("Step cannot be executed", stepName, context.getCorrelationId());
+            return StepResult.failure(OnboardingConstants.Messages.STEP_CANNOT_BE_EXECUTED, stepName, context.getCorrelationId());
         }
         
         // Execute step synchronously
@@ -95,7 +95,7 @@ public class GenericStepExecutionEngine {
                         context.getCorrelationId(), stepNumber, stepResult.getErrorMessage());
                 
                 return StepResult.failure(
-                        "Step " + stepName + " failed: " + stepResult.getErrorMessage(),
+                        String.format(OnboardingConstants.FormatStrings.STEP_FAILED_FORMAT, stepName, stepResult.getErrorMessage()),
                         OnboardingConstants.SequenceNames.SEQUENCE, context.getCorrelationId()
                 );
             }
@@ -166,7 +166,7 @@ public class GenericStepExecutionEngine {
                         "stepConfig", executor.getConfig(),
                         "executionTime", duration,
                         "correlationId", context.getCorrelationId(),
-                        "errorType", "STEP_EXECUTION_ERROR",
+                        "errorType", OnboardingConstants.ErrorTypes.STEP_EXECUTION_ERROR,
                         "inputPayloadSize", inputPayloadData.getAccuratePayloadSize(),
                         "outputPayloadSize", outputPayloadData.getAccuratePayloadSize(),
                         "inputPayloadComplete", inputPayloadData.getPayloadAsCompleteString(),

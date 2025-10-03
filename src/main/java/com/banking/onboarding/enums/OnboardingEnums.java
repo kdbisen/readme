@@ -2,83 +2,40 @@ package com.banking.onboarding.enums;
 
 /**
  * Enums for Banking Onboarding Service
- * Provides type-safe constants for better code maintainability
+ * Provides type safety for commonly used values
  */
-public class OnboardingEnums {
+public final class OnboardingEnums {
 
-    // ===========================================
-    // REQUEST TYPE ENUM
-    // ===========================================
-    public enum RequestType {
-        ADD_KYC("ADD_KYC", "Add KYC Information"),
-        UPDATE_KYC("UPDATE_KYC", "Update KYC Information"),
-        DELETE_KYC("DELETE_KYC", "Delete KYC Information"),
-        VERIFY_KYC("VERIFY_KYC", "Verify KYC Information");
-
-        private final String code;
-        private final String description;
-
-        RequestType(String code, String description) {
-            this.code = code;
-            this.description = description;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public static RequestType fromCode(String code) {
-            for (RequestType type : values()) {
-                if (type.code.equals(code)) {
-                    return type;
-                }
-            }
-            throw new IllegalArgumentException("Unknown request type: " + code);
-        }
+    private OnboardingEnums() {
+        // Utility class - prevent instantiation
     }
 
     // ===========================================
-    // STEP NAME ENUM
+    // REQUEST TYPES ENUM
     // ===========================================
-    public enum StepName {
-        XML_TO_JSON_TRANSFORMATION("XML_TO_JSON_TRANSFORMATION", "XML to JSON Transformation", 1),
-        FENERGO_ENTITY_CREATION("FENERGO_ENTITY_CREATION", "Fenergo Entity Creation", 2),
-        FENERGO_JOURNEY_SCHEMA_EVALUATION("FENERGO_JOURNEY_SCHEMA_EVALUATION", "Fenergo Journey Schema Evaluation", 3),
-        FENERGO_JOURNEY_LAUNCH("FENERGO_JOURNEY_LAUNCH", "Fenergo Journey Launch", 4);
+    public enum RequestType {
+        ADD_KYC("ADD_KYC"),
+        UPDATE_KYC("UPDATE_KYC"),
+        DELETE_KYC("DELETE_KYC"),
+        VERIFY_KYC("VERIFY_KYC");
 
-        private final String code;
-        private final String description;
-        private final int priority;
+        private final String value;
 
-        StepName(String code, String description, int priority) {
-            this.code = code;
-            this.description = description;
-            this.priority = priority;
+        RequestType(String value) {
+            this.value = value;
         }
 
-        public String getCode() {
-            return code;
+        public String getValue() {
+            return value;
         }
 
-        public String getDescription() {
-            return description;
-        }
-
-        public int getPriority() {
-            return priority;
-        }
-
-        public static StepName fromCode(String code) {
-            for (StepName step : values()) {
-                if (step.code.equals(code)) {
-                    return step;
+        public static RequestType fromString(String value) {
+            for (RequestType type : RequestType.values()) {
+                if (type.value.equals(value)) {
+                    return type;
                 }
             }
-            throw new IllegalArgumentException("Unknown step name: " + code);
+            throw new IllegalArgumentException("Unknown request type: " + value);
         }
     }
 
@@ -86,35 +43,29 @@ public class OnboardingEnums {
     // PROCESS STATUS ENUM
     // ===========================================
     public enum ProcessStatus {
-        PENDING("PENDING", "Process is pending"),
-        IN_PROGRESS("IN_PROGRESS", "Process is in progress"),
-        COMPLETED("COMPLETED", "Process completed successfully"),
-        FAILED("FAILED", "Process failed"),
-        CANCELLED("CANCELLED", "Process was cancelled");
+        PENDING("PENDING"),
+        IN_PROGRESS("IN_PROGRESS"),
+        COMPLETED("COMPLETED"),
+        FAILED("FAILED"),
+        CANCELLED("CANCELLED");
 
-        private final String code;
-        private final String description;
+        private final String value;
 
-        ProcessStatus(String code, String description) {
-            this.code = code;
-            this.description = description;
+        ProcessStatus(String value) {
+            this.value = value;
         }
 
-        public String getCode() {
-            return code;
+        public String getValue() {
+            return value;
         }
 
-        public String getDescription() {
-            return description;
-        }
-
-        public static ProcessStatus fromCode(String code) {
-            for (ProcessStatus status : values()) {
-                if (status.code.equals(code)) {
+        public static ProcessStatus fromString(String value) {
+            for (ProcessStatus status : ProcessStatus.values()) {
+                if (status.value.equals(value)) {
                     return status;
                 }
             }
-            throw new IllegalArgumentException("Unknown process status: " + code);
+            throw new IllegalArgumentException("Unknown process status: " + value);
         }
     }
 
@@ -122,35 +73,143 @@ public class OnboardingEnums {
     // STEP STATUS ENUM
     // ===========================================
     public enum StepStatus {
-        PENDING("PENDING", "Step is pending"),
-        IN_PROGRESS("IN_PROGRESS", "Step is in progress"),
-        COMPLETED("COMPLETED", "Step completed successfully"),
-        FAILED("FAILED", "Step failed"),
-        SKIPPED("SKIPPED", "Step was skipped");
+        PENDING("PENDING"),
+        IN_PROGRESS("IN_PROGRESS"),
+        COMPLETED("COMPLETED"),
+        FAILED("FAILED"),
+        SKIPPED("SKIPPED");
 
-        private final String code;
-        private final String description;
+        private final String value;
 
-        StepStatus(String code, String description) {
-            this.code = code;
-            this.description = description;
+        StepStatus(String value) {
+            this.value = value;
         }
 
-        public String getCode() {
-            return code;
+        public String getValue() {
+            return value;
         }
 
-        public String getDescription() {
-            return description;
-        }
-
-        public static StepStatus fromCode(String code) {
-            for (StepStatus status : values()) {
-                if (status.code.equals(code)) {
+        public static StepStatus fromString(String value) {
+            for (StepStatus status : StepStatus.values()) {
+                if (status.value.equals(value)) {
                     return status;
                 }
             }
-            throw new IllegalArgumentException("Unknown step status: " + code);
+            throw new IllegalArgumentException("Unknown step status: " + value);
+        }
+    }
+
+    // ===========================================
+    // EXECUTION ORDER ENUM
+    // ===========================================
+    public enum ExecutionOrder {
+        PRIORITY("PRIORITY"),
+        ORDER("ORDER");
+
+        private final String value;
+
+        ExecutionOrder(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public static ExecutionOrder fromString(String value) {
+            for (ExecutionOrder order : ExecutionOrder.values()) {
+                if (order.value.equalsIgnoreCase(value)) {
+                    return order;
+                }
+            }
+            throw new IllegalArgumentException("Unknown execution order: " + value);
+        }
+    }
+
+    // ===========================================
+    // STEP CATEGORY ENUM
+    // ===========================================
+    public enum StepCategory {
+        GENERAL("GENERAL"),
+        TRANSFORMATION("TRANSFORMATION"),
+        FENERGO("FENERGO"),
+        VALIDATION("VALIDATION");
+
+        private final String value;
+
+        StepCategory(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public static StepCategory fromString(String value) {
+            for (StepCategory category : StepCategory.values()) {
+                if (category.value.equals(value)) {
+                    return category;
+                }
+            }
+            throw new IllegalArgumentException("Unknown step category: " + value);
+        }
+    }
+
+    // ===========================================
+    // DEPENDENCY TYPE ENUM
+    // ===========================================
+    public enum DependencyType {
+        REQUIRED("REQUIRED"),
+        OPTIONAL("OPTIONAL");
+
+        private final String value;
+
+        DependencyType(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public static DependencyType fromString(String value) {
+            for (DependencyType type : DependencyType.values()) {
+                if (type.value.equals(value)) {
+                    return type;
+                }
+            }
+            throw new IllegalArgumentException("Unknown dependency type: " + value);
+        }
+    }
+
+    // ===========================================
+    // DATA TYPE ENUM
+    // ===========================================
+    public enum DataType {
+        NULL("NULL"),
+        JSON("JSON"),
+        XML("XML"),
+        JSON_ARRAY("JSON_ARRAY"),
+        MAP("MAP"),
+        STRING("STRING");
+
+        private final String value;
+
+        DataType(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public static DataType fromString(String value) {
+            for (DataType type : DataType.values()) {
+                if (type.value.equals(value)) {
+                    return type;
+                }
+            }
+            throw new IllegalArgumentException("Unknown data type: " + value);
         }
     }
 
@@ -158,227 +217,58 @@ public class OnboardingEnums {
     // ERROR TYPE ENUM
     // ===========================================
     public enum ErrorType {
-        BUSINESS_ERROR("BUSINESS_ERROR", "Business logic error"),
-        VALIDATION_ERROR("VALIDATION_ERROR", "Validation error"),
-        PROCESS_ERROR("PROCESS_ERROR", "Process execution error"),
-        EXTERNAL_API_ERROR("EXTERNAL_API_ERROR", "External API error"),
-        STEP_EXECUTION_ERROR("STEP_EXECUTION_ERROR", "Step execution error"),
-        BINDING_ERROR("BINDING_ERROR", "Request binding error"),
-        MISSING_PARAMETER("MISSING_PARAMETER", "Missing required parameter"),
-        TYPE_MISMATCH("TYPE_MISMATCH", "Parameter type mismatch"),
-        MALFORMED_REQUEST("MALFORMED_REQUEST", "Malformed request"),
-        METHOD_NOT_SUPPORTED("METHOD_NOT_SUPPORTED", "HTTP method not supported"),
-        NOT_FOUND("NOT_FOUND", "Resource not found"),
-        ILLEGAL_ARGUMENT("ILLEGAL_ARGUMENT", "Illegal argument"),
-        RUNTIME_ERROR("RUNTIME_ERROR", "Runtime error"),
-        INTERNAL_ERROR("INTERNAL_ERROR", "Internal server error"),
-        UNKNOWN_ERROR("UNKNOWN_ERROR", "Unknown error"),
-        SYSTEM_ERROR("SYSTEM_ERROR", "System error"),
-        OPERATION_FAILURE("OPERATION_FAILURE", "Operation failure"),
-        RATE_LIMIT_EXCEEDED("RATE_LIMIT_EXCEEDED", "Rate limit exceeded"),
-        DATABASE_ERROR("DATABASE_ERROR", "Database error"),
-        CIRCUIT_BREAKER_ERROR("CIRCUIT_BREAKER_ERROR", "Circuit breaker error"),
-        RETRY_FAILURE("RETRY_FAILURE", "Retry failure");
+        STEP_EXECUTION_ERROR("STEP_EXECUTION_ERROR"),
+        VALIDATION_ERROR("VALIDATION_ERROR"),
+        PROCESS_ERROR("PROCESS_ERROR"),
+        EXTERNAL_API_ERROR("EXTERNAL_API_ERROR");
 
-        private final String code;
-        private final String description;
+        private final String value;
 
-        ErrorType(String code, String description) {
-            this.code = code;
-            this.description = description;
+        ErrorType(String value) {
+            this.value = value;
         }
 
-        public String getCode() {
-            return code;
+        public String getValue() {
+            return value;
         }
 
-        public String getDescription() {
-            return description;
-        }
-
-        public static ErrorType fromCode(String code) {
-            for (ErrorType type : values()) {
-                if (type.code.equals(code)) {
+        public static ErrorType fromString(String value) {
+            for (ErrorType type : ErrorType.values()) {
+                if (type.value.equals(value)) {
                     return type;
                 }
             }
-            throw new IllegalArgumentException("Unknown error type: " + code);
+            throw new IllegalArgumentException("Unknown error type: " + value);
         }
     }
 
     // ===========================================
-    // SEVERITY LEVEL ENUM
+    // API STATUS ENUM
     // ===========================================
-    public enum SeverityLevel {
-        LOW("LOW", "Low severity"),
-        MEDIUM("MEDIUM", "Medium severity"),
-        HIGH("HIGH", "High severity"),
-        CRITICAL("CRITICAL", "Critical severity");
+    public enum ApiStatus {
+        CREATED("CREATED"),
+        EVALUATED("EVALUATED"),
+        LAUNCHED("LAUNCHED"),
+        SUCCESS("SUCCESS"),
+        FAILED("FAILED");
 
-        private final String code;
-        private final String description;
+        private final String value;
 
-        SeverityLevel(String code, String description) {
-            this.code = code;
-            this.description = description;
+        ApiStatus(String value) {
+            this.value = value;
         }
 
-        public String getCode() {
-            return code;
+        public String getValue() {
+            return value;
         }
 
-        public String getDescription() {
-            return description;
-        }
-
-        public static SeverityLevel fromCode(String code) {
-            for (SeverityLevel level : values()) {
-                if (level.code.equals(code)) {
-                    return level;
+        public static ApiStatus fromString(String value) {
+            for (ApiStatus status : ApiStatus.values()) {
+                if (status.value.equals(value)) {
+                    return status;
                 }
             }
-            throw new IllegalArgumentException("Unknown severity level: " + code);
-        }
-    }
-
-    // ===========================================
-    // ENTITY TYPE ENUM
-    // ===========================================
-    public enum EntityType {
-        COMPANY("Company", "Corporate entity"),
-        CLIENT("Client", "Client entity"),
-        INDIVIDUAL("Individual", "Individual person"),
-        CORPORATE("Corporate", "Corporate entity");
-
-        private final String code;
-        private final String description;
-
-        EntityType(String code, String description) {
-            this.code = code;
-            this.description = description;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public static EntityType fromCode(String code) {
-            for (EntityType type : values()) {
-                if (type.code.equals(code)) {
-                    return type;
-                }
-            }
-            throw new IllegalArgumentException("Unknown entity type: " + code);
-        }
-    }
-
-    // ===========================================
-    // JOURNEY TYPE ENUM
-    // ===========================================
-    public enum JourneyType {
-        CLIENT_ONBOARDING("Client Onboarding", "Client onboarding journey"),
-        KYC_VERIFICATION("KYC Verification", "KYC verification journey"),
-        RISK_ASSESSMENT("Risk Assessment", "Risk assessment journey");
-
-        private final String code;
-        private final String description;
-
-        JourneyType(String code, String description) {
-            this.code = code;
-            this.description = description;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public static JourneyType fromCode(String code) {
-            for (JourneyType type : values()) {
-                if (type.code.equals(code)) {
-                    return type;
-                }
-            }
-            throw new IllegalArgumentException("Unknown journey type: " + code);
-        }
-    }
-
-    // ===========================================
-    // JURISDICTION ENUM
-    // ===========================================
-    public enum Jurisdiction {
-        US("US", "United States"),
-        UK("UK", "United Kingdom"),
-        EU("EU", "European Union"),
-        APAC("APAC", "Asia Pacific");
-
-        private final String code;
-        private final String description;
-
-        Jurisdiction(String code, String description) {
-            this.code = code;
-            this.description = description;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public static Jurisdiction fromCode(String code) {
-            for (Jurisdiction jurisdiction : values()) {
-                if (jurisdiction.code.equals(code)) {
-                    return jurisdiction;
-                }
-            }
-            throw new IllegalArgumentException("Unknown jurisdiction: " + code);
-        }
-    }
-
-    // ===========================================
-    // PROPERTY TYPE ENUM
-    // ===========================================
-    public enum PropertyType {
-        SINGLE("Single", "Single value property"),
-        MULTIPLE("Multiple", "Multiple value property"),
-        ARRAY("Array", "Array property");
-
-        private final String code;
-        private final String description;
-
-        PropertyType(String code, String description) {
-            this.code = code;
-            this.description = description;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public static PropertyType fromCode(String code) {
-            for (PropertyType type : values()) {
-                if (type.code.equals(code)) {
-                    return type;
-                }
-            }
-            throw new IllegalArgumentException("Unknown property type: " + code);
+            throw new IllegalArgumentException("Unknown API status: " + value);
         }
     }
 }
-
-
-

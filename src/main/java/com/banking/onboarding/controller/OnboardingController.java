@@ -1,7 +1,6 @@
 package com.banking.onboarding.controller;
 
 import com.banking.onboarding.constants.OnboardingConstants;
-import com.banking.onboarding.enums.OnboardingEnums;
 import com.banking.onboarding.exception.ValidationException;
 import com.banking.onboarding.model.OnboardingProcess;
 import com.banking.onboarding.service.CorrelationIdStrategyService;

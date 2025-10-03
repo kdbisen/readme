@@ -1,5 +1,8 @@
 package com.banking.onboarding.step.config;
 
+import com.banking.onboarding.constants.OnboardingConstants.*;
+import com.banking.onboarding.constants.OnboardingConstants.StepNames;
+import com.banking.onboarding.enums.OnboardingEnums;
 import com.banking.onboarding.step.StepConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,35 +20,50 @@ import java.util.stream.Collectors;
 @Component
 public class StepConfigurationLoader {
 
-    @Value("${onboarding.steps.definition:XML_TO_JSON_TRANSFORMATION,FENERGO_ENTITY_CREATION,FENERGO_JOURNEY_SCHEMA_EVALUATION,FENERGO_JOURNEY_LAUNCH}")
+    @Value("${onboarding.steps.definition:" + ConfigValues.STEP_DEFINITIONS_DEFAULT + "}")
     private String stepDefinitions;
 
-    @Value("${onboarding.steps.execution.order:PRIORITY}")
+    @Value("${onboarding.steps.execution.order:" +  ConfigValues.EXECUTION_ORDER_DEFAULT + "}")
     private String executionOrder;
 
-    @Value("${onboarding.steps.retry.enabled:true}")
+    @Value("${onboarding.steps.retry.enabled:" +  ConfigValues.RETRY_ENABLED_DEFAULT + "}")
     private boolean retryEnabled;
     
-    @Value("${onboarding.steps.retry.max-attempts:3}")
+    @Value("${onboarding.steps.retry.max-attempts:" +ConfigValues.MAX_RETRIES_DEFAULT + "}")
     private int maxRetries;
     
-    @Value("${onboarding.steps.retry.delay-ms:1000}")
+    @Value("${onboarding.steps.retry.delay-ms:" +ConfigValues.RETRY_DELAY_MS_DEFAULT + "}")
     private long retryDelayMs;
     
-    @Value("${onboarding.steps.retry.backoff-multiplier:2.0}")
+    @Value("${onboarding.steps.retry.backoff-multiplier:" +ConfigValues.BACKOFF_MULTIPLIER_DEFAULT + "}")
     private double backoffMultiplier;
     
-    @Value("${onboarding.steps.timeout-ms:30000}")
+    @Value("${onboarding.steps.timeout-ms:" +ConfigValues.TIMEOUT_MS_DEFAULT + "}")
     private int timeoutMs;
 
     /**
      * Simple Step Definitions - Minimal Code
      */
     private static final Map<String, StepInfo> STEPS = Map.of(
-        "XML_TO_JSON_TRANSFORMATION", new StepInfo(1, "Transform XML to JSON", new String[]{}),
-        "FENERGO_ENTITY_CREATION", new StepInfo(2, "Create Fenergo Entity", new String[]{"XML_TO_JSON_TRANSFORMATION"}),
-        "FENERGO_JOURNEY_SCHEMA_EVALUATION", new StepInfo(3, "Evaluate Journey Schema", new String[]{"FENERGO_ENTITY_CREATION"}),
-        "FENERGO_JOURNEY_LAUNCH", new StepInfo(4, "Launch Journey", new String[]{"FENERGO_JOURNEY_SCHEMA_EVALUATION"})
+       StepNames.XML_TO_JSON_TRANSFORMATION,
+            new StepInfo(StepPriorities.XML_TO_JSON_TRANSFORMATION,
+                       StepDescriptions.XML_TO_JSON_TRANSFORMATION,
+                       StepDependencies.XML_TO_JSON_TRANSFORMATION),
+
+       StepNames.FENERGO_ENTITY_CREATION,
+            new StepInfo(StepPriorities.FENERGO_ENTITY_CREATION,
+                       StepDescriptions.FENERGO_ENTITY_CREATION,
+                       StepDependencies.FENERGO_ENTITY_CREATION),
+
+       StepNames.FENERGO_JOURNEY_SCHEMA_EVALUATION,
+            new StepInfo(StepPriorities.FENERGO_JOURNEY_SCHEMA_EVALUATION,
+                       StepDescriptions.FENERGO_JOURNEY_SCHEMA_EVALUATION,
+                       StepDependencies.FENERGO_JOURNEY_SCHEMA_EVALUATION),
+
+       StepNames.FENERGO_JOURNEY_LAUNCH,
+            new StepInfo(StepPriorities.FENERGO_JOURNEY_LAUNCH,
+                       StepDescriptions.FENERGO_JOURNEY_LAUNCH,
+                       StepDependencies.FENERGO_JOURNEY_LAUNCH)
     );
 
     /**
@@ -72,12 +90,6 @@ public class StepConfigurationLoader {
         return StepConfig.builder()
                 .stepName(stepName)
                 .description(info.description)
-                .retryEnabled(retryEnabled)
-                .maxRetries(maxRetries)
-                .retryDelayMs(retryDelayMs)
-                .backoffMultiplier(backoffMultiplier)
-                .asyncEnabled(false)
-                .timeoutMs(timeoutMs)
                 .dependencies(info.dependencies)
                 .properties(Map.of("priority", info.priority))
                 .build();
@@ -90,12 +102,6 @@ public class StepConfigurationLoader {
         return StepConfig.builder()
                 .stepName(stepName)
                 .description("Step: " + stepName)
-                .retryEnabled(retryEnabled)
-                .maxRetries(maxRetries)
-                .retryDelayMs(retryDelayMs)
-                .backoffMultiplier(backoffMultiplier)
-                .asyncEnabled(false)
-                .timeoutMs(timeoutMs)
                 .dependencies(new String[0])
                 .properties(Map.of("priority", 99))
                 .build();
@@ -105,7 +111,7 @@ public class StepConfigurationLoader {
      * Check if priority-based execution is enabled
      */
     public boolean isPriorityBasedExecution() {
-        return "PRIORITY".equalsIgnoreCase(executionOrder);
+        return ExecutionOrders.PRIORITY.equalsIgnoreCase(executionOrder);
     }
 
     /**

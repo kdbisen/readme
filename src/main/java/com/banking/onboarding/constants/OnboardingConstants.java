@@ -1,7 +1,7 @@
 package com.banking.onboarding.constants;
 
 /**
- * Central constants class for Banking Onboarding Service
+ * Comprehensive Constants for Banking Onboarding Service
  * Contains all hardcoded strings used throughout the application
  */
 public final class OnboardingConstants {
@@ -35,6 +35,18 @@ public final class OnboardingConstants {
     }
 
     // ===========================================
+    // STEP DESCRIPTIONS
+    // ===========================================
+    public static final class StepDescriptions {
+        public static final String XML_TO_JSON_TRANSFORMATION = "Transform XML to JSON";
+        public static final String FENERGO_ENTITY_CREATION = "Create Fenergo Entity";
+        public static final String FENERGO_JOURNEY_SCHEMA_EVALUATION = "Evaluate Journey Schema";
+        public static final String FENERGO_JOURNEY_LAUNCH = "Launch Journey";
+        
+        private StepDescriptions() {}
+    }
+
+    // ===========================================
     // PROCESS STATUS
     // ===========================================
     public static final class ProcessStatus {
@@ -61,177 +73,145 @@ public final class OnboardingConstants {
     }
 
     // ===========================================
-    // ERROR TYPES
-    // ===========================================
-    public static final class ErrorTypes {
-        public static final String BUSINESS_ERROR = "BUSINESS_ERROR";
-        public static final String VALIDATION_ERROR = "VALIDATION_ERROR";
-        public static final String PROCESS_ERROR = "PROCESS_ERROR";
-        public static final String EXTERNAL_API_ERROR = "EXTERNAL_API_ERROR";
-        public static final String STEP_EXECUTION_ERROR = "STEP_EXECUTION_ERROR";
-        public static final String BINDING_ERROR = "BINDING_ERROR";
-        public static final String MISSING_PARAMETER = "MISSING_PARAMETER";
-        public static final String TYPE_MISMATCH = "TYPE_MISMATCH";
-        public static final String MALFORMED_REQUEST = "MALFORMED_REQUEST";
-        public static final String METHOD_NOT_SUPPORTED = "METHOD_NOT_SUPPORTED";
-        public static final String NOT_FOUND = "NOT_FOUND";
-        public static final String ILLEGAL_ARGUMENT = "ILLEGAL_ARGUMENT";
-        public static final String RUNTIME_ERROR = "RUNTIME_ERROR";
-        public static final String INTERNAL_ERROR = "INTERNAL_ERROR";
-        public static final String UNKNOWN_ERROR = "UNKNOWN_ERROR";
-        public static final String SYSTEM_ERROR = "SYSTEM_ERROR";
-        public static final String OPERATION_FAILURE = "OPERATION_FAILURE";
-        public static final String RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED";
-        public static final String DATABASE_ERROR = "DATABASE_ERROR";
-        public static final String CIRCUIT_BREAKER_ERROR = "CIRCUIT_BREAKER_ERROR";
-        public static final String RETRY_FAILURE = "RETRY_FAILURE";
-        
-        private ErrorTypes() {}
-    }
-
-    // ===========================================
-    // ERROR CODES
-    // ===========================================
-    public static final class ErrorCodes {
-        public static final String VALIDATION_ERROR = "VALIDATION_ERROR";
-        public static final String PROCESS_ERROR = "PROCESS_ERROR";
-        public static final String EXTERNAL_API_ERROR = "EXTERNAL_API_ERROR";
-        public static final String STEP_EXECUTION_ERROR = "STEP_EXECUTION_ERROR";
-        public static final String BINDING_ERROR = "BINDING_ERROR";
-        public static final String MISSING_PARAMETER = "MISSING_PARAMETER";
-        public static final String TYPE_MISMATCH = "TYPE_MISMATCH";
-        public static final String MALFORMED_REQUEST = "MALFORMED_REQUEST";
-        public static final String METHOD_NOT_SUPPORTED = "METHOD_NOT_SUPPORTED";
-        public static final String NOT_FOUND = "NOT_FOUND";
-        public static final String ILLEGAL_ARGUMENT = "ILLEGAL_ARGUMENT";
-        public static final String RUNTIME_ERROR = "RUNTIME_ERROR";
-        public static final String INTERNAL_ERROR = "INTERNAL_ERROR";
-        public static final String UNKNOWN = "UNKNOWN";
-        
-        private ErrorCodes() {}
-    }
-
-    // ===========================================
-    // SEVERITY LEVELS
-    // ===========================================
-    public static final class SeverityLevels {
-        public static final String LOW = "LOW";
-        public static final String MEDIUM = "MEDIUM";
-        public static final String HIGH = "HIGH";
-        public static final String CRITICAL = "CRITICAL";
-        
-        private SeverityLevels() {}
-    }
-
-    // ===========================================
-    // HTTP HEADERS
-    // ===========================================
-    public static final class HttpHeaders {
-        public static final String AUTHORIZATION = "Authorization";
-        public static final String X_TENANT_ID = "X-TENANT-ID";
-        public static final String X_CORRELATION_ID = "X-Correlation-ID";
-        public static final String CONTENT_TYPE = "Content-Type";
-        public static final String USER_AGENT = "User-Agent";
-        public static final String BEARER_PREFIX = "Bearer ";
-        
-        private HttpHeaders() {}
-    }
-
-    // ===========================================
-    // CONTENT TYPES
-    // ===========================================
-    public static final class ContentTypes {
-        public static final String APPLICATION_JSON = "application/json";
-        public static final String APPLICATION_XML = "application/xml";
-        public static final String TEXT_XML = "text/xml";
-        public static final String TEXT_PLAIN = "text/plain";
-        
-        private ContentTypes() {}
-    }
-
-    // ===========================================
-    // ENTITY TYPES
-    // ===========================================
-    public static final class EntityTypes {
-        public static final String COMPANY = "Company";
-        public static final String CLIENT = "Client";
-        public static final String INDIVIDUAL = "Individual";
-        public static final String CORPORATE = "Corporate";
-        
-        private EntityTypes() {}
-    }
-
-    // ===========================================
-    // JOURNEY TYPES
-    // ===========================================
-    public static final class JourneyTypes {
-        public static final String CLIENT_ONBOARDING = "Client Onboarding";
-        public static final String KYC_VERIFICATION = "KYC Verification";
-        public static final String RISK_ASSESSMENT = "Risk Assessment";
-        
-        private JourneyTypes() {}
-    }
-
-    // ===========================================
-    // JURISDICTIONS
-    // ===========================================
-    public static final class Jurisdictions {
-        public static final String US = "US";
-        public static final String UK = "UK";
-        public static final String EU = "EU";
-        public static final String APAC = "APAC";
-        
-        private Jurisdictions() {}
-    }
-
-    // ===========================================
-    // ACCESS LAYERS
-    // ===========================================
-    public static final class AccessLayers {
-        public static final String INTERNAL = "internal";
-        public static final String EXTERNAL = "external";
-        
-        private AccessLayers() {}
-    }
-
-    // ===========================================
-    // PROPERTY TYPES
-    // ===========================================
-    public static final class PropertyTypes {
-        public static final String SINGLE = "Single";
-        public static final String MULTIPLE = "Multiple";
-        public static final String ARRAY = "Array";
-        
-        private PropertyTypes() {}
-    }
-
-    // ===========================================
     // PROCESS ID PREFIXES
     // ===========================================
     public static final class ProcessIdPrefixes {
         public static final String PROCESS = "PROC-";
         public static final String PROCESS_REJECTED = "PROC-REJECTED-";
         public static final String TEST = "TEST-";
+        public static final String CORRELATION = "CORR-";
         
         private ProcessIdPrefixes() {}
     }
 
     // ===========================================
-    // AUDIT PREFIXES
+    // EXECUTION ORDERS
     // ===========================================
-    public static final class AuditPrefixes {
-        public static final String AUDIT = "AUDIT_";
+    public static final class ExecutionOrders {
+        public static final String PRIORITY = "PRIORITY";
+        public static final String ORDER = "ORDER";
         
-        private AuditPrefixes() {}
+        private ExecutionOrders() {}
     }
 
     // ===========================================
-    // SEQUENCE NAMES
+    // STEP CATEGORIES
     // ===========================================
-    public static final class SequenceNames {
-        public static final String SEQUENCE = "SEQUENCE";
+    public static final class StepCategories {
+        public static final String GENERAL = "GENERAL";
+        public static final String TRANSFORMATION = "TRANSFORMATION";
+        public static final String FENERGO = "FENERGO";
+        public static final String VALIDATION = "VALIDATION";
         
-        private SequenceNames() {}
+        private StepCategories() {}
+    }
+
+    // ===========================================
+    // DEPENDENCY TYPES
+    // ===========================================
+    public static final class DependencyTypes {
+        public static final String REQUIRED = "REQUIRED";
+        public static final String OPTIONAL = "OPTIONAL";
+        
+        private DependencyTypes() {}
+    }
+
+    // ===========================================
+    // DATA TYPES
+    // ===========================================
+    public static final class DataTypes {
+        public static final String NULL = "NULL";
+        public static final String JSON = "JSON";
+        public static final String XML = "XML";
+        public static final String JSON_ARRAY = "JSON_ARRAY";
+        public static final String MAP = "MAP";
+        public static final String STRING = "STRING";
+        
+        private DataTypes() {}
+    }
+
+    // ===========================================
+    // ERROR TYPES
+    // ===========================================
+    public static final class ErrorTypes {
+        public static final String STEP_EXECUTION_ERROR = "STEP_EXECUTION_ERROR";
+        public static final String VALIDATION_ERROR = "VALIDATION_ERROR";
+        public static final String PROCESS_ERROR = "PROCESS_ERROR";
+        public static final String EXTERNAL_API_ERROR = "EXTERNAL_API_ERROR";
+        public static final String BUSINESS_ERROR = "BUSINESS_ERROR";
+        public static final String BINDING_ERROR = "BINDING_ERROR";
+        public static final String MISSING_PARAMETER = "MISSING_PARAMETER";
+        public static final String TYPE_MISMATCH = "TYPE_MISMATCH";
+        public static final String MALFORMED_REQUEST = "MALFORMED_REQUEST";
+        public static final String METHOD_NOT_SUPPORTED = "METHOD_NOT_SUPPORTED";
+        public static final String NOT_FOUND = "NOT_FOUND";
+        public static final String ILLEGAL_ARGUMENT = "ILLEGAL_ARGUMENT";
+        public static final String RUNTIME_ERROR = "RUNTIME_ERROR";
+        public static final String INTERNAL_ERROR = "INTERNAL_ERROR";
+        
+        private ErrorTypes() {}
+    }
+
+    // ===========================================
+    // API STATUS
+    // ===========================================
+    public static final class ApiStatus {
+        public static final String CREATED = "CREATED";
+        public static final String EVALUATED = "EVALUATED";
+        public static final String LAUNCHED = "LAUNCHED";
+        public static final String SUCCESS = "SUCCESS";
+        public static final String FAILED = "FAILED";
+        
+        private ApiStatus() {}
+    }
+
+    // ===========================================
+    // MESSAGES
+    // ===========================================
+    public static final class Messages {
+        public static final String XML_DATA_REQUIRED = "XML data is required and cannot be empty";
+        public static final String PROCESS_NOT_FOUND = "Process not found with ID: ";
+        public static final String REQUEST_REJECTED = "Request rejected due to correlation ID strategy";
+        public static final String REQUEST_REJECTED_PREFIX = "Request rejected: ";
+        public static final String NO_JSON_DATA_AVAILABLE = "No JSON data available from previous step";
+        public static final String NO_SCHEMA_INFO_AVAILABLE = "No schema information available from previous step";
+        public static final String MISSING_ENTITY_ID_OR_SCHEMA = "Missing required entityId or journeySchemaId";
+        public static final String ENTITY_CREATION_NO_ID = "Entity creation succeeded but no entityId returned";
+        public static final String INVALID_FENERGO_RESPONSE = "Invalid response from Fenergo Entity API";
+        public static final String ENTITY_CREATION_FAILED = "Entity creation failed: ";
+        public static final String JOURNEY_LAUNCH_FAILED = "Journey launch failed: ";
+        public static final String NO_JOURNEY_RESPONSE = "No response from Fenergo Journey Command API";
+        public static final String STEP_CANNOT_BE_EXECUTED = "Step cannot be executed";
+        public static final String STEP_FAILED_FORMAT = "Step %s failed: %s";
+        public static final String ENTITY_CREATED_SUCCESSFULLY = "Entity created successfully";
+        
+        private Messages() {}
+    }
+
+    // ===========================================
+    // LOG MESSAGES
+    // ===========================================
+    public static final class LogMessages {
+        public static final String STEP_NUMBERING_CACHE_CLEARED = "Step numbering cache cleared";
+        public static final String STEP_NUMBERING_CACHE_REFRESHED = "Step numbering cache refreshed";
+        public static final String DEV_ENVIRONMENT_INIT = "Initializing Development Environment Configuration";
+        public static final String TEST_ENVIRONMENT_INIT = "Initializing Test Environment Configuration";
+        public static final String STAGING_ENVIRONMENT_INIT = "Initializing Staging Environment Configuration";
+        public static final String PROD_ENVIRONMENT_INIT = "Initializing Production Environment Configuration";
+        
+        private LogMessages() {}
+    }
+
+    // ===========================================
+    // FORMAT STRINGS
+    // ===========================================
+    public static final class FormatStrings {
+        public static final String STEP_FORMAT = "Step %d";
+        public static final String STEP_FAILED_FORMAT = "Step %s failed: %s";
+        public static final String PROCESS_ID_FORMAT = "%s%s";
+        public static final String CORRELATION_ID_FORMAT = "%s%s";
+        
+        private FormatStrings() {}
     }
 
     // ===========================================
@@ -252,28 +232,9 @@ public final class OnboardingConstants {
         public static final String DEFAULT_ENTITY_NAME = "Acme Ltd";
         public static final String DEFAULT_JURISDICTION = "US";
         public static final String DEFAULT_ENTITY_TYPE = "Company";
+        public static final String DEFAULT_STEP_DESCRIPTION = "Default step";
         
         private DefaultValues() {}
-    }
-
-    // ===========================================
-    // MESSAGES
-    // ===========================================
-    public static final class Messages {
-        public static final String XML_DATA_REQUIRED = "XML data is required and cannot be empty";
-        public static final String PROCESS_NOT_FOUND = "Process not found with ID: ";
-        public static final String REQUEST_REJECTED = "Request rejected due to correlation ID strategy";
-        public static final String REQUEST_REJECTED_PREFIX = "Request rejected: ";
-        public static final String NO_JSON_DATA_AVAILABLE = "No JSON data available from previous step";
-        public static final String NO_SCHEMA_INFO_AVAILABLE = "No schema information available from previous step";
-        public static final String MISSING_ENTITY_ID_OR_SCHEMA = "Missing required entityId or journeySchemaId";
-        public static final String ENTITY_CREATION_NO_ID = "Entity creation succeeded but no entityId returned";
-        public static final String INVALID_FENERGO_RESPONSE = "Invalid response from Fenergo Entity API";
-        public static final String ENTITY_CREATION_FAILED = "Entity creation failed: ";
-        public static final String JOURNEY_LAUNCH_FAILED = "Journey launch failed: ";
-        public static final String NO_JOURNEY_RESPONSE = "No response from Fenergo Journey Command API";
-        
-        private Messages() {}
     }
 
     // ===========================================
@@ -296,7 +257,150 @@ public final class OnboardingConstants {
         
         private Suggestions() {}
     }
+
+    // ===========================================
+    // CONFIGURATION VALUES
+    // ===========================================
+    public static final class ConfigValues {
+        public static final String STEP_DEFINITIONS_DEFAULT = "XML_TO_JSON_TRANSFORMATION,FENERGO_ENTITY_CREATION,FENERGO_JOURNEY_SCHEMA_EVALUATION,FENERGO_JOURNEY_LAUNCH";
+        public static final String EXECUTION_ORDER_DEFAULT = "PRIORITY";
+        public static final boolean RETRY_ENABLED_DEFAULT = true;
+        public static final int MAX_RETRIES_DEFAULT = 3;
+        public static final long RETRY_DELAY_MS_DEFAULT = 1000L;
+        public static final double BACKOFF_MULTIPLIER_DEFAULT = 2.0;
+        public static final int TIMEOUT_MS_DEFAULT = 30000;
+        
+        private ConfigValues() {}
+    }
+
+    // ===========================================
+    // STEP PRIORITIES
+    // ===========================================
+    public static final class StepPriorities {
+        public static final int XML_TO_JSON_TRANSFORMATION = 1;
+        public static final int FENERGO_ENTITY_CREATION = 2;
+        public static final int FENERGO_JOURNEY_SCHEMA_EVALUATION = 3;
+        public static final int FENERGO_JOURNEY_LAUNCH = 4;
+        
+        private StepPriorities() {}
+    }
+
+    // ===========================================
+    // HTTP HEADERS
+    // ===========================================
+    public static final class HttpHeaders {
+        public static final String AUTHORIZATION = "Authorization";
+        public static final String CONTENT_TYPE = "Content-Type";
+        public static final String ACCEPT = "Accept";
+        public static final String X_CORRELATION_ID = "X-Correlation-ID";
+        public static final String X_TENANT_ID = "X-Tenant-ID";
+        public static final String USER_AGENT = "User-Agent";
+        public static final String BEARER_PREFIX = "Bearer ";
+        
+        private HttpHeaders() {}
+    }
+
+    // ===========================================
+    // CONTENT TYPES
+    // ===========================================
+    public static final class ContentTypes {
+        public static final String APPLICATION_JSON = "application/json";
+        public static final String APPLICATION_XML = "application/xml";
+        public static final String TEXT_XML = "text/xml";
+        
+        private ContentTypes() {}
+    }
+
+    // ===========================================
+    // ENTITY TYPES
+    // ===========================================
+    public static final class EntityTypes {
+        public static final String COMPANY = "Company";
+        public static final String INDIVIDUAL = "Individual";
+        public static final String PARTNERSHIP = "Partnership";
+        public static final String CLIENT = "Client";
+        
+        private EntityTypes() {}
+    }
+
+    // ===========================================
+    // PROPERTY TYPES
+    // ===========================================
+    public static final class PropertyTypes {
+        public static final String STRING = "String";
+        public static final String INTEGER = "Integer";
+        public static final String BOOLEAN = "Boolean";
+        public static final String DATE = "Date";
+        public static final String SINGLE = "Single";
+        public static final String MULTIPLE = "Multiple";
+        
+        private PropertyTypes() {}
+    }
+
+    // ===========================================
+    // JOURNEY TYPES
+    // ===========================================
+    public static final class JourneyTypes {
+        public static final String CLIENT_ONBOARDING = "Client Onboarding";
+        public static final String KYC_VERIFICATION = "KYC Verification";
+        public static final String COMPLIANCE_CHECK = "Compliance Check";
+        
+        private JourneyTypes() {}
+    }
+
+    // ===========================================
+    // ACCESS LAYERS
+    // ===========================================
+    public static final class AccessLayers {
+        public static final String PUBLIC = "Public";
+        public static final String PRIVATE = "Private";
+        public static final String INTERNAL = "Internal";
+        public static final String EXTERNAL = "External";
+        
+        private AccessLayers() {}
+    }
+
+    // ===========================================
+    // SEQUENCE NAMES
+    // ===========================================
+    public static final class SequenceNames {
+        public static final String SEQUENCE = "SEQUENCE";
+        public static final String STEP_EXECUTION = "STEP_EXECUTION";
+        
+        private SequenceNames() {}
+    }
+
+    // ===========================================
+    // ERROR CODES
+    // ===========================================
+    public static final class ErrorCodes {
+        public static final String BUSINESS_ERROR = "BUSINESS_ERROR";
+        public static final String VALIDATION_ERROR = "VALIDATION_ERROR";
+        public static final String PROCESS_ERROR = "PROCESS_ERROR";
+        public static final String EXTERNAL_API_ERROR = "EXTERNAL_API_ERROR";
+        public static final String BINDING_ERROR = "BINDING_ERROR";
+        public static final String MISSING_PARAMETER = "MISSING_PARAMETER";
+        public static final String TYPE_MISMATCH = "TYPE_MISMATCH";
+        public static final String MALFORMED_REQUEST = "MALFORMED_REQUEST";
+        public static final String METHOD_NOT_SUPPORTED = "METHOD_NOT_SUPPORTED";
+        public static final String NOT_FOUND = "NOT_FOUND";
+        public static final String ILLEGAL_ARGUMENT = "ILLEGAL_ARGUMENT";
+        public static final String RUNTIME_ERROR = "RUNTIME_ERROR";
+        public static final String INTERNAL_ERROR = "INTERNAL_ERROR";
+        public static final String STEP_EXECUTION_ERROR = "STEP_EXECUTION_ERROR";
+        
+        private ErrorCodes() {}
+    }
+
+    // ===========================================
+    // STEP DEPENDENCIES
+    // ===========================================
+    public static final class StepDependencies {
+        public static final String[] XML_TO_JSON_TRANSFORMATION = {};
+        public static final String[] FENERGO_ENTITY_CREATION = {"XML_TO_JSON_TRANSFORMATION"};
+        public static final String[] FENERGO_JOURNEY_SCHEMA_EVALUATION = {"FENERGO_ENTITY_CREATION"};
+        public static final String[] FENERGO_JOURNEY_LAUNCH = {"FENERGO_JOURNEY_SCHEMA_EVALUATION"};
+        
+        private StepDependencies() {}
+    }
 }
-
-
-

@@ -144,12 +144,6 @@ public class FenergoJourneyLaunchStep implements GenericStepExecutor {
         return StepConfig.builder()
                 .stepName(getStepName())
                 .description("Launch journey via Fenergo Journey Command API")
-                .retryEnabled(true)
-                .maxRetries(3)
-                .retryDelayMs(3000)
-                .backoffMultiplier(2.0)
-                .asyncEnabled(false)
-                .timeoutMs(60000)
                 .dependencies(new String[]{OnboardingConstants.StepNames.FENERGO_JOURNEY_SCHEMA_EVALUATION})
                 .build();
     }

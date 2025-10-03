@@ -183,12 +183,6 @@ public class FenergoJourneySchemaEvaluationStep implements GenericStepExecutor {
         return StepConfig.builder()
                 .stepName(getStepName())
                 .description("Evaluate journey schema via Fenergo Logic Engine")
-                .retryEnabled(true)
-                .maxRetries(3)
-                .retryDelayMs(2000)
-                .backoffMultiplier(2.0)
-                .asyncEnabled(false)
-                .timeoutMs(60000)
                 .dependencies(new String[]{"FENERGO_ENTITY_CREATION"})
                 .build();
     }
