@@ -247,3 +247,4 @@ public class FunctionalOcrProcessingStep implements GenericStepExecutor {
                !context.getCorrelationId().isEmpty();
     }
 }
+
